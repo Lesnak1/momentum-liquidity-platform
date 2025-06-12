@@ -6,8 +6,6 @@ import json
 import requests
 import time
 from urllib.parse import urlparse, parse_qs
-import asyncio
-import websockets
 import pandas as pd
 import numpy as np
 
