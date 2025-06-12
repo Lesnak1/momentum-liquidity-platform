@@ -184,7 +184,7 @@ function App() {
   const updateCryptoPrices = async () => {
     try {
       const apiBase = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8000';
-      const cryptoResponse = await fetch(`${apiBase}/crypto-prices`);
+      const cryptoResponse = await fetch(`${apiBase}/api/crypto-prices`);
       const cryptoPricesData = await cryptoResponse.json();
       
       if (cryptoPricesData.prices) {
@@ -201,7 +201,7 @@ function App() {
   const updateTradeStatistics = async () => {
     try {
       const apiBase = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8000';
-      const statsResponse = await fetch(`${apiBase}/trade-statistics`);
+      const statsResponse = await fetch(`${apiBase}/api/trade-statistics`);
       const statsData = await statsResponse.json();
       
       // Genel istatistikler
