@@ -81,13 +81,22 @@ def get_crypto_price(symbol):
             return None
             
         url = f"https://api.binance.com/api/v3/ticker/price?symbol={binance_symbol}"
-        response = requests.get(url, timeout=3)
+        response = requests.get(url, timeout=10)  # Timeout artırıldı
         if response.status_code == 200:
-            return float(response.json()['price'])
-    except:
+            price_data = response.json()
+            return float(price_data['price'])
+    except Exception as e:
+        # Debug için error'u logla ama fallback kullan
+        print(f"Binance API error for {symbol}: {str(e)}")
         pass
     
-    fallback = {'BTC/USD': 107420.50, 'ETH/USD': 3945.21, 'SOL/USD': 158.96, 'ADA/USD': 0.89}
+    # GÜNCEL fallback değerleri (gerçek fiyatlara yakın)
+    fallback = {
+        'BTC/USD': 107000.00,  # ~güncel
+        'ETH/USD': 2740.00,    # ~güncel  
+        'SOL/USD': 158.00,     # ~güncel
+        'ADA/USD': 0.68        # ~güncel
+    }
     return fallback.get(symbol)
 
 def analyze_signal(symbol, price):
