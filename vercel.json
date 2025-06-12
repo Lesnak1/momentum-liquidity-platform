@@ -23,11 +23,6 @@
       "dest": "/frontend/build/$1"
     }
   ],
-  "functions": {
-    "backend/vercel_app.py": {
-      "runtime": "python3.9"
-    }
-  },
   "env": {
     "NODE_ENV": "production"
   }
