@@ -52,16 +52,15 @@ function App() {
   const loadInitialData = async () => {
     try {
       // Backend'den gerçek forex verilerini yükle
-      const apiBase = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8000';
-      const forexResponse = await fetch(`${apiBase}/api/market/status`);
+      const forexResponse = await fetch('http://localhost:8000/prices');
       const forexData = await forexResponse.json();
       
       // Forex verilerini initialize et
-      if (forexData.market_data && forexData.market_data.forex) {
+      if (forexData.prices) {
         const initialForexData = {};
-        Object.entries(forexData.market_data.forex).forEach(([symbol, price]) => {
+        Object.entries(forexData.prices).forEach(([symbol, priceData]) => {
           initialForexData[symbol] = {
-            currentPrice: price,
+            currentPrice: priceData.price,
             signal: null,
             pastTrades: []
           };
@@ -87,22 +86,21 @@ function App() {
 
   const updatePrices = async () => {
     try {
-      const apiBase = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8000';
-      const pricesResponse = await fetch(`${apiBase}/api/market/status`);
+      const pricesResponse = await fetch('http://localhost:8000/prices');
       const pricesData = await pricesResponse.json();
       
       setTradingData(prev => {
         const newData = { ...prev };
         
         // Backend\'den gelen fiyatları güncelle
-        if (pricesData && pricesData.market_data && pricesData.market_data.forex) {
-          Object.entries(pricesData.market_data.forex).forEach(([symbol, price]) => {
+        if (pricesData && pricesData.prices) {
+          Object.entries(pricesData.prices).forEach(([symbol, priceData]) => {
             if (newData[symbol]) {
-              newData[symbol].currentPrice = price;
+              newData[symbol].currentPrice = priceData.price;
             } else {
               // Yeni symbol ekle
               newData[symbol] = {
-                currentPrice: price,
+                currentPrice: priceData.price,
                 signal: null,
                 pastTrades: []
               };
@@ -116,7 +114,7 @@ function App() {
       setLastUpdate(new Date().toLocaleTimeString('tr-TR'));
       
       // API durumunu güncelle
-      if (pricesData.status === 'success') {
+      if (pricesData.api_status === 'live') {
         setConnectionStatus('canlı');
       } else {
         setConnectionStatus('hata');
@@ -130,13 +128,12 @@ function App() {
 
   const updateSignals = async () => {
     try {
-      const apiBase = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8000';
       // Forex sinyallerini çek
-      const forexResponse = await fetch(`${apiBase}/api/forex/signals`);
+      const forexResponse = await fetch('http://localhost:8000/signals');
       const forexSignalsData = await forexResponse.json();
       
       // Kripto sinyallerini çek
-      const cryptoResponse = await fetch(`${apiBase}/api/crypto/signals`);
+      const cryptoResponse = await fetch('http://localhost:8000/crypto/signals');
       const cryptoSignalsData = await cryptoResponse.json();
       
       // State'leri güncelle
@@ -183,8 +180,7 @@ function App() {
 
   const updateCryptoPrices = async () => {
     try {
-      const apiBase = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8000';
-      const cryptoResponse = await fetch(`${apiBase}/api/crypto-prices`);
+      const cryptoResponse = await fetch('http://localhost:8000/crypto/prices');
       const cryptoPricesData = await cryptoResponse.json();
       
       if (cryptoPricesData.prices) {
@@ -200,8 +196,7 @@ function App() {
 
   const updateTradeStatistics = async () => {
     try {
-      const apiBase = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8000';
-      const statsResponse = await fetch(`${apiBase}/api/trade-statistics`);
+      const statsResponse = await fetch('http://localhost:8000/statistics');
       const statsData = await statsResponse.json();
       
       // Genel istatistikler

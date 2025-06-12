@@ -2,10 +2,7 @@
  * Backend API servisleri
  */
 
-// Vercel deployment için dinamik URL
-const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? '' // Production'da aynı domain kullan
-  : 'http://localhost:8000'; // Development için backend
+const API_BASE_URL = 'http://localhost:8000';
 
 class ApiService {
     /**
@@ -13,7 +10,7 @@ class ApiService {
      */
     async getCurrentPrices() {
         try {
-            const response = await fetch(`${API_BASE_URL}/api/market-data`);
+            const response = await fetch(`${API_BASE_URL}/prices`);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -31,12 +28,12 @@ class ApiService {
      */
     async getActiveSignals() {
         try {
-            const response = await fetch(`${API_BASE_URL}/api/forex-signals`);
+            const response = await fetch(`${API_BASE_URL}/signals`);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             const data = await response.json();
-            return { active_signals: data.signals || [], count: data.signals?.length || 0 };
+            return data;
         } catch (error) {
             console.error('Aktif sinyal alma hatası:', error);
             return { active_signals: [], count: 0 };
@@ -65,7 +62,7 @@ class ApiService {
      */
     async testConnection() {
         try {
-            const response = await fetch(`${API_BASE_URL}/api/market-data`);
+            const response = await fetch(`${API_BASE_URL}/prices`);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
