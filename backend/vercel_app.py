@@ -1,22 +1,63 @@
 """
-Ultra minimal FastAPI for Vercel - GERÇEK VERİLER
+Vercel Serverless için FastAPI - GERÇEK VERİLER
 """
 
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+import json
+from typing import Optional, Dict
 import requests
 import time
-from typing import Optional, Dict
 
-app = FastAPI(title="Momentum Signals API", version="1.0.0")
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Basit HTTP handler - FastAPI yerine
+def handler(event, context):
+    """Vercel serverless handler"""
+    
+    # Request path'i al
+    path = event.get('path', '/')
+    method = event.get('httpMethod', 'GET')
+    
+    # CORS headers
+    headers = {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'Content-Type': 'application/json'
+    }
+    
+    try:
+        # Route handling
+        if path == '/':
+            response_body = {"service": "Momentum Signals API", "status": "LIVE", "version": "1.0.0"}
+        elif path == '/api/market/status':
+            response_body = get_market_status()
+        elif path == '/api/forex/signals':
+            response_body = get_forex_signals()
+        elif path == '/api/crypto/signals':
+            response_body = get_crypto_signals()
+        elif path == '/api/crypto-prices':
+            response_body = get_crypto_prices()
+        elif path == '/api/trade-statistics':
+            response_body = get_trade_statistics()
+        else:
+            response_body = {"error": "Not found"}
+            return {
+                'statusCode': 404,
+                'headers': headers,
+                'body': json.dumps(response_body)
+            }
+        
+        return {
+            'statusCode': 200,
+            'headers': headers,
+            'body': json.dumps(response_body)
+        }
+        
+    except Exception as e:
+        error_response = {"error": str(e), "status": "error"}
+        return {
+            'statusCode': 500,
+            'headers': headers,
+            'body': json.dumps(error_response)
+        }
 
 # GERÇEK API Providers (minimal)
 def get_forex_price(symbol: str) -> Optional[float]:
@@ -93,12 +134,8 @@ def analyze_signal(symbol: str, price: float) -> Optional[Dict]:
     except:
         return None
 
-@app.get("/")
-async def root():
-    return {"service": "Momentum Signals API", "status": "LIVE", "version": "1.0.0"}
-
-@app.get("/api/forex/signals")
-async def forex_signals():
+# API Functions
+def get_forex_signals():
     signals = []
     symbols = ['EUR/USD', 'GBP/USD', 'USD/JPY']
     
@@ -111,8 +148,7 @@ async def forex_signals():
     
     return {"status": "success", "signals": signals, "data_source": "REAL FOREX APIs"}
 
-@app.get("/api/crypto/signals")
-async def crypto_signals():
+def get_crypto_signals():
     signals = []
     symbols = ['BTC/USD', 'ETH/USD', 'SOL/USD']
     
@@ -125,8 +161,7 @@ async def crypto_signals():
     
     return {"status": "success", "signals": signals, "data_source": "REAL BINANCE API"}
 
-@app.get("/api/market/status")
-async def market_status():
+def get_market_status():
     forex_data = {}
     crypto_data = {}
     
@@ -146,8 +181,7 @@ async def market_status():
         "timestamp": time.time()
     }
 
-@app.get("/api/crypto-prices")
-async def crypto_prices():
+def get_crypto_prices():
     prices = {}
     symbols = ['BTC/USD', 'ETH/USD', 'SOL/USD', 'ADA/USD']
     
@@ -162,8 +196,7 @@ async def crypto_prices():
     
     return {"status": "success", "prices": prices, "api_status": "live"}
 
-@app.get("/api/trade-statistics")
-async def trade_statistics():
+def get_trade_statistics():
     return {
         "status": "success",
         "general_statistics": {
@@ -176,7 +209,4 @@ async def trade_statistics():
         "symbol_statistics": {},
         "recent_history": [],
         "recent_trades": []
-    }
-
-# Vercel handler (ASGI uyumlu)
-handler = app 
+    } 
