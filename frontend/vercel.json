@@ -1,26 +1,18 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "server/index.js",
-      "use": "@vercel/node",
-      "config": {
-        "maxDuration": 10
-      }
-    },
-    {
-      "src": "build/**",
-      "use": "@vercel/static"
+  "buildCommand": "npm run build",
+  "devCommand": "npm start",
+  "installCommand": "npm install",
+  "framework": "create-react-app",
+  "functions": {
+    "server/index.js": {
+      "runtime": "nodejs18.x"
     }
-  ],
+  },
   "routes": [
     {
       "src": "/api/(.*)",
       "dest": "/server/index.js"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/build/$1"
     }
   ]
 } 
