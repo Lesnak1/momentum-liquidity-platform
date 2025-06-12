@@ -3,14 +3,17 @@
   "builds": [
     {
       "src": "frontend/package.json",
-      "use": "@vercel/node",
+      "use": "@vercel/static-build",
       "config": {
-        "includeFiles": "frontend/**/*"
+        "distDir": "build"
       }
     },
     {
       "src": "backend/vercel_app.py",
-      "use": "@vercel/python"
+      "use": "@vercel/python",
+      "config": {
+        "maxLambdaSize": "50mb"
+      }
     }
   ],
   "routes": [
@@ -19,16 +22,8 @@
       "dest": "/backend/vercel_app.py"
     },
     {
-      "src": "/static/(.*)",
-      "dest": "/frontend/build/static/$1"
-    },
-    {
-      "src": "/(.*\\.(js|css|ico|png|jpg|jpeg|gif|svg|woff|woff2|ttf|eot))",
-      "dest": "/frontend/build/$1"
-    },
-    {
       "src": "/(.*)",
-      "dest": "/frontend/build/index.html"
+      "dest": "/frontend/$1"
     }
   ]
 } 
