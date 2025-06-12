@@ -9,14 +9,14 @@ function generateCryptoSignal(symbol) {
   const strategy = strategies[Math.floor(Math.random() * strategies.length)];
   
   const basePrices = {
-    'BTCUSDT': 42500,
-    'ETHUSDT': 2800,
-    'BNBUSDT': 320,
-    'ADAUSDT': 0.38,
-    'SOLUSDT': 95.50,
-    'DOGEUSDT': 0.078,
-    'MATICUSDT': 0.85,
-    'DOTUSDT': 5.25
+    'BTCUSDT': 96840,
+    'ETHUSDT': 3420,
+    'BNBUSDT': 710,
+    'ADAUSDT': 1.12,
+    'SOLUSDT': 235.50,
+    'DOGEUSDT': 0.395,
+    'MATICUSDT': 0.575,
+    'DOTUSDT': 8.45
   };
   
   const basePrice = basePrices[symbol] || 1.0000;

@@ -1,5 +1,18 @@
-// Vercel Serverless Function: Forex Signals
-let signalCache = [];
+// Vercel Serverless Function: Forex Signals  
+let signalCache = [
+  {
+    symbol: 'XAUUSD',
+    strategy: 'KRO',
+    signal_type: 'SAT',
+    timeframe: '15m', 
+    ideal_entry: 2020.50,
+    take_profit: 1995.30,
+    stop_loss: 2035.80,
+    reliability_score: 10,
+    entry_time: new Date().toISOString(),
+    status: 'ACTIVE'
+  }
+];
 
 function generateRealisticPrice(symbol, basePrice) {
   const variance = basePrice * 0.001;
@@ -54,8 +67,8 @@ function generateTradingSignal(symbol) {
 }
 
 export default function handler(req, res) {
-  // %30 şans ile yeni sinyal
-  if (Math.random() < 0.3) {
+  // %45 şans ile yeni sinyal
+  if (Math.random() < 0.45) {
     const symbols = ['XAUUSD', 'GBPJPY', 'EURUSD', 'GBPUSD', 'EURCAD'];
     const randomSymbol = symbols[Math.floor(Math.random() * symbols.length)];
     
