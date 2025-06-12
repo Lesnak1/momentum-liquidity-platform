@@ -6,6 +6,8 @@ import json
 import requests
 import time
 from urllib.parse import urlparse, parse_qs
+import asyncio
+import websockets
 
 def app(environ, start_response):
     """WSGI application"""
@@ -67,37 +69,62 @@ def get_forex_price(symbol):
     return fallback.get(symbol)
 
 def get_crypto_price(symbol):
-    try:
-        # BTC/USD → BTCUSDT formatına çevir
-        if symbol == 'BTC/USD':
-            binance_symbol = 'BTCUSDT'
-        elif symbol == 'ETH/USD':
-            binance_symbol = 'ETHUSDT'  
-        elif symbol == 'SOL/USD':
-            binance_symbol = 'SOLUSDT'
-        elif symbol == 'ADA/USD':
-            binance_symbol = 'ADAUSDT'
-        else:
+    """
+    ANLIK KRİPTO FİYATINI BİNANCE WEBSOCKET'TEN ÇEKER.
+    Serverless mimari için her istekte yeni bağlantı kurar.
+    """
+    async def _get_price_from_websocket():
+        # Sembolü WebSocket formatına çevir (örn: 'BTC/USD' -> 'btcusdt')
+        binance_symbol = symbol.replace('/', '').lower()
+        uri = f"wss://stream.binance.com:9443/ws/{binance_symbol}@ticker"
+        
+        try:
+            # 5 saniye timeout ile bağlan ve mesaj al
+            async with websockets.connect(uri, open_timeout=5, close_timeout=5) as websocket:
+                message = await asyncio.wait_for(websocket.recv(), timeout=5)
+                data = json.loads(message)
+                price = float(data['c'])  # 'c' anlık fiyatı temsil eder
+                print(f"✅ ANLIK WEBSOCKET: {symbol} = ${price:,.2f}")
+                return price
+        except (asyncio.TimeoutError, websockets.exceptions.ConnectionClosedError) as e:
+            print(f"❌ WEBSOCKET ZAMAN AŞIMI/BAĞLANTI HATASI: {symbol} - {type(e).__name__}")
             return None
-            
-        url = f"https://api.binance.com/api/v3/ticker/price?symbol={binance_symbol}"
-        response = requests.get(url, timeout=10)  # Timeout artırıldı
-        if response.status_code == 200:
-            price_data = response.json()
-            return float(price_data['price'])
+        except Exception as e:
+            print(f"❌ WEBSOCKET GENEL HATA: {symbol} - {e}")
+            return None
+
+    try:
+        # Asenkron fonksiyonu senkron bir ortamda çalıştır
+        price = asyncio.run(_get_price_from_websocket())
+        if price is not None:
+            return price
+    except RuntimeError:
+        # Zaten bir event loop çalışıyorsa yeni bir tane oluştur
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        price = loop.run_until_complete(_get_price_from_websocket())
+        if price is not None:
+            return price
+
+    # --- WEBSOCKET BAŞARISIZ OLURSA FALLBACK ---
+    print(f"⚠️ WEBSOCKET BAŞARISIZ! REST API DENENİYOR: {symbol}")
+    try:
+        binance_symbols = {'BTC/USD': 'BTCUSDT', 'ETH/USD': 'ETHUSDT', 'SOL/USD': 'SOLUSDT', 'ADA/USD': 'ADAUSDT'}
+        binance_symbol = binance_symbols.get(symbol)
+        if binance_symbol:
+            url = f"https://api.binance.com/api/v3/ticker/price?symbol={binance_symbol}"
+            response = requests.get(url, timeout=5)
+            if response.status_code == 200:
+                rest_price = float(response.json()['price'])
+                print(f"✅ REST API YEDEĞİ BAŞARILI: {symbol} = ${rest_price:,.2f}")
+                return rest_price
     except Exception as e:
-        # Debug için error'u logla ama fallback kullan
-        print(f"Binance API error for {symbol}: {str(e)}")
-        pass
-    
-    # GÜNCEL fallback değerleri (gerçek fiyatlara yakın)
-    fallback = {
-        'BTC/USD': 107000.00,  # ~güncel
-        'ETH/USD': 2740.00,    # ~güncel  
-        'SOL/USD': 158.00,     # ~güncel
-        'ADA/USD': 0.68        # ~güncel
-    }
-    return fallback.get(symbol)
+        print(f"❌ REST API YEDEĞİ DE BAŞARISIZ: {symbol} - {e}")
+
+    # --- TÜM SİSTEMLER BAŞARISIZ OLURSA SON ÇARE ---
+    print(f"🚨 SON ÇARE: STATİK FALLBACK KULLANILIYOR: {symbol}")
+    fallback_prices = {'BTC/USD': 68000.0, 'ETH/USD': 3700.0, 'SOL/USD': 165.0, 'ADA/USD': 0.45}
+    return fallback_prices.get(symbol)
 
 def analyze_signal(symbol, price):
     try:
