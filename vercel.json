@@ -30,8 +30,5 @@
       "src": "/(.*)",
       "dest": "/frontend/build/index.html"
     }
-  ],
-  "functions": {
-    "backend/vercel_app.py": "@vercel/python"
-  }
+  ]
 } 
