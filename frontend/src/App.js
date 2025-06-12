@@ -52,8 +52,7 @@ function App() {
   const loadInitialData = async () => {
     try {
       // Backend'den gerçek forex verilerini yükle
-      const apiBase = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8000';
-      const forexResponse = await fetch(`${apiBase}/api/market-data`);
+      const forexResponse = await fetch('/api/market-data');
       const forexData = await forexResponse.json();
       
       // Forex verilerini initialize et
@@ -87,8 +86,7 @@ function App() {
 
   const updatePrices = async () => {
     try {
-      const apiBase = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8000';
-      const pricesResponse = await fetch(`${apiBase}/api/market-data`);
+      const pricesResponse = await fetch('/api/market-data');
       const pricesData = await pricesResponse.json();
       
       setTradingData(prev => {
@@ -132,13 +130,12 @@ function App() {
 
   const updateSignals = async () => {
     try {
-      const apiBase = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8000';
       // Forex sinyallerini çek
-      const forexResponse = await fetch(`${apiBase}/api/forex-signals`);
+      const forexResponse = await fetch('/api/forex-signals');
       const forexSignalsData = await forexResponse.json();
       
       // Kripto sinyallerini çek
-      const cryptoResponse = await fetch(`${apiBase}/api/crypto-signals`);
+      const cryptoResponse = await fetch('/api/crypto-signals');
       const cryptoSignalsData = await cryptoResponse.json();
       
       // State'leri güncelle
@@ -185,8 +182,7 @@ function App() {
 
   const updateCryptoPrices = async () => {
     try {
-      const apiBase = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8000';
-      const cryptoResponse = await fetch(`${apiBase}/api/crypto-prices`);
+      const cryptoResponse = await fetch('/api/crypto-prices');
       const cryptoPricesData = await cryptoResponse.json();
       
       if (cryptoPricesData.prices) {
@@ -202,8 +198,7 @@ function App() {
 
   const updateTradeStatistics = async () => {
     try {
-      const apiBase = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8000';
-      const statsResponse = await fetch(`${apiBase}/api/trade-statistics`);
+      const statsResponse = await fetch('/api/trade-statistics');
       const statsData = await statsResponse.json();
       
       // Genel istatistikler
