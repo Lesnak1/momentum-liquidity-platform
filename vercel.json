@@ -1,21 +1,37 @@
 {
-  "framework": "create-react-app",
-  "buildCommand": "cd frontend && npm run build",
-  "outputDirectory": "frontend/build",
-  "functions": {
-    "backend/vercel_app.py": "@vercel/python"
-  },
+  "version": 2,
+  "builds": [
+    {
+      "src": "frontend/package.json",
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": "frontend/**/*"
+      }
+    },
+    {
+      "src": "backend/vercel_app.py",
+      "use": "@vercel/python"
+    }
+  ],
   "routes": [
     {
       "src": "/api/(.*)",
       "dest": "/backend/vercel_app.py"
     },
     {
-      "handle": "filesystem"
+      "src": "/static/(.*)",
+      "dest": "/frontend/build/static/$1"
+    },
+    {
+      "src": "/(.*\\.(js|css|ico|png|jpg|jpeg|gif|svg|woff|woff2|ttf|eot))",
+      "dest": "/frontend/build/$1"
     },
     {
       "src": "/(.*)",
-      "dest": "/index.html"
+      "dest": "/frontend/build/index.html"
     }
-  ]
+  ],
+  "functions": {
+    "backend/vercel_app.py": "@vercel/python"
+  }
 } 
