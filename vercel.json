@@ -2,11 +2,12 @@
   "version": 2,
   "buildCommand": "cd frontend && npm run build",
   "outputDirectory": "frontend/build",
-  "functions": {
-    "backend/vercel_app.py": {
-      "runtime": "python3.9"
+  "builds": [
+    {
+      "src": "backend/vercel_app.py",
+      "use": "@vercel/python"
     }
-  },
+  ],
   "routes": [
     {
       "src": "/api/(.*)",
