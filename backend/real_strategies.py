@@ -342,6 +342,11 @@ class KROStrategy:
             reward = abs(take_profit - ideal_entry)
             risk_reward = round(reward / risk, 2) if risk > 0 else 1.0
             
+            # KRİTİK: Minimum 1.5 RR kontrolü - ASLA daha düşük RR kabul etme!
+            if risk_reward < 1.5:
+                print(f"❌ {symbol} KRO sinyali reddedildi: RR {risk_reward} < 1.5 (Minimum RR standardı)")
+                return None
+            
             return {
                 'id': f"KRO_{symbol}_{int(time.time())}",
                 'symbol': symbol,
@@ -490,6 +495,11 @@ class LMOStrategy:
             reward = abs(take_profit - ideal_entry)
             risk_reward = round(reward / risk, 2) if risk > 0 else 1.0
             
+            # KRİTİK: Minimum 1.5 RR kontrolü - ASLA daha düşük RR kabul etme!
+            if risk_reward < 1.5:
+                print(f"❌ {symbol} LMO sinyali reddedildi: RR {risk_reward} < 1.5 (Minimum RR standardı)")
+                return None
+            
             return {
                 'id': f"LMO_{symbol}_{int(time.time())}",
                 'symbol': symbol,
@@ -562,7 +572,7 @@ class RealStrategyManager:
         
         # Eğer sadece biri varsa, tek başına yeterli güvenilirlikte mi kontrol et
         if kro_result and not lmo_result:
-            if kro_result['reliability_score'] >= 8:  # Yüksek güvenilirlik
+            if kro_result['reliability_score'] >= 8 and kro_result['risk_reward'] >= 1.5:  # Yüksek güvenilirlik + RR
                 kro_result['strategy'] = 'KRO (Strong)'
                 kro_result['analysis'] = f"KRO Güçlü: {kro_result['analysis']}"
                 return kro_result
@@ -570,7 +580,7 @@ class RealStrategyManager:
                 return None  # Tek başına yeterli değil
         
         if lmo_result and not kro_result:
-            if lmo_result['reliability_score'] >= 8:  # Yüksek güvenilirlik
+            if lmo_result['reliability_score'] >= 8 and lmo_result['risk_reward'] >= 1.5:  # Yüksek güvenilirlik + RR
                 lmo_result['strategy'] = 'LMO (Strong)'  
                 lmo_result['analysis'] = f"LMO Güçlü: {lmo_result['analysis']}"
                 return lmo_result
@@ -611,6 +621,11 @@ class RealStrategyManager:
             risk = abs(combined_entry - combined_sl)
             reward = abs(combined_tp - combined_entry)
             risk_reward = round(reward / risk, 2) if risk > 0 else 1.0
+            
+            # KRİTİK: Combined stratejide de minimum 1.5 RR kontrolü!
+            if risk_reward < 1.5:
+                print(f"❌ {symbol} COMBINED sinyali reddedildi: RR {risk_reward} < 1.5 (Minimum RR standardı)")
+                return None
             
             # Birleşik analiz detayları
             combined_analysis = f"KRO+LMO Konfirmasyon: {kro_result['analysis'].split(': ', 1)[1]} | {lmo_result['analysis'].split(': ', 1)[1]}"

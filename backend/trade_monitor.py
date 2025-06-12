@@ -290,6 +290,136 @@ class TradeMonitor:
         """Son işlem geçmişini getir"""
         return self.trade_history[-limit:] if len(self.trade_history) >= limit else self.trade_history
     
+    def record_completed_trade(self, trade_result):
+        """
+        TP/SL'e ulaşan trade'i kaydet
+        Backend'den gelen completed trade sonuçlarını işler
+        """
+        try:
+            # Trade history'ye ekle
+            completed_trade = {
+                'signal_id': trade_result['signal_id'],
+                'symbol': trade_result['symbol'],
+                'strategy': trade_result['strategy'],
+                'signal_type': trade_result['signal_type'],
+                'entry_price': trade_result['entry_price'],
+                'exit_price': trade_result['exit_price'],
+                'take_profit': trade_result['take_profit'],
+                'stop_loss': trade_result['stop_loss'],
+                'result': trade_result['result'],  # PROFIT/LOSS
+                'result_type': trade_result['result_type'],  # TP_HIT/SL_HIT
+                'reliability_score': trade_result['reliability_score'],
+                'entry_time': trade_result['entry_time'],
+                'exit_time': trade_result['exit_time'],
+                'asset_type': trade_result['asset_type'],
+                'status': 'COMPLETED',
+                
+                # Pip hesaplama
+                'pips_earned': trade_result.get('pip_gain', 0) if trade_result['result'] == 'PROFIT' 
+                              else -trade_result.get('pip_loss', 0),
+                
+                # Süre hesaplama
+                'duration': self._calculate_duration(trade_result['entry_time'], trade_result['exit_time'])
+            }
+            
+            self.trade_history.append(completed_trade)
+            
+            # İstatistikleri güncelle
+            self._update_completed_statistics(trade_result)
+            
+            # Kaydet
+            self.save_trade_history()
+            
+            # Log
+            result_emoji = "🎯" if trade_result['result'] == 'PROFIT' else "🛑"
+            pip_change = completed_trade['pips_earned']
+            print(f"{result_emoji} Trade kaydedildi: {trade_result['symbol']} {trade_result['signal_type']} | "
+                  f"{trade_result['result_type']} | {pip_change:+.1f} pips | "
+                  f"Güvenilirlik: {trade_result['reliability_score']}/10")
+            
+        except Exception as e:
+            print(f"❌ Trade kaydetme hatası: {e}")
+    
+    def _update_completed_statistics(self, trade_result):
+        """Tamamlanan trade için istatistik güncelle"""
+        symbol = trade_result['symbol']
+        
+        # Genel istatistikler
+        self.statistics['total_trades'] += 1
+        
+        if trade_result['result'] == 'PROFIT':
+            self.statistics['winning_trades'] += 1
+            pip_gain = trade_result.get('pip_gain', 0)
+            self.statistics['total_pips'] += pip_gain
+        else:
+            self.statistics['losing_trades'] += 1  
+            pip_loss = trade_result.get('pip_loss', 0)
+            self.statistics['total_pips'] -= pip_loss
+        
+        # Win rate hesapla
+        total = self.statistics['total_trades']
+        wins = self.statistics['winning_trades'] 
+        self.statistics['win_rate'] = round((wins / total) * 100, 1) if total > 0 else 0
+        
+        # Total pips round
+        self.statistics['total_pips'] = round(self.statistics['total_pips'], 1)
+        
+        # Symbol-bazlı istatistikler
+        if symbol not in self.symbol_statistics:
+            self.symbol_statistics[symbol] = {
+                'total_trades': 0,
+                'winning_trades': 0,
+                'losing_trades': 0,
+                'win_rate': 0.0,
+                'total_pips': 0.0,
+                'avg_reliability': 0.0,
+                'best_strategy': '',
+                'strategies': {}
+            }
+        
+        symbol_stats = self.symbol_statistics[symbol]
+        symbol_stats['total_trades'] += 1
+        
+        if trade_result['result'] == 'PROFIT':
+            symbol_stats['winning_trades'] += 1
+            symbol_stats['total_pips'] += trade_result.get('pip_gain', 0)
+        else:
+            symbol_stats['losing_trades'] += 1
+            symbol_stats['total_pips'] -= trade_result.get('pip_loss', 0)
+        
+        # Symbol win rate
+        symbol_total = symbol_stats['total_trades']
+        symbol_wins = symbol_stats['winning_trades']
+        symbol_stats['win_rate'] = round((symbol_wins / symbol_total) * 100, 1) if symbol_total > 0 else 0
+        
+        # Total pips round
+        symbol_stats['total_pips'] = round(symbol_stats['total_pips'], 1)
+        
+        # Average reliability
+        symbol_stats['avg_reliability'] = round(
+            (symbol_stats.get('avg_reliability', 0) * (symbol_total - 1) + trade_result['reliability_score']) / symbol_total, 1
+        )
+        
+        # Strategy tracking
+        strategy = trade_result['strategy']
+        if strategy not in symbol_stats['strategies']:
+            symbol_stats['strategies'][strategy] = {'wins': 0, 'total': 0}
+        
+        symbol_stats['strategies'][strategy]['total'] += 1
+        if trade_result['result'] == 'PROFIT':
+            symbol_stats['strategies'][strategy]['wins'] += 1
+        
+        # Best strategy
+        best_strategy = ''
+        best_win_rate = 0
+        for strat, data in symbol_stats['strategies'].items():
+            if data['total'] >= 3:  # En az 3 trade
+                win_rate = (data['wins'] / data['total']) * 100
+                if win_rate > best_win_rate:
+                    best_win_rate = win_rate
+                    best_strategy = strat
+        symbol_stats['best_strategy'] = best_strategy
+    
     def save_trade_history(self):
         """Trade geçmişini dosyaya kaydet"""
         try:

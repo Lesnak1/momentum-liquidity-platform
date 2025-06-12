@@ -1,6 +1,25 @@
 # Dependencies
 node_modules/
-*/node_modules/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.git
+.mypy_cache
+.pytest_cache
+.hypothesis
 
 # Production builds
 frontend/build/
@@ -46,11 +65,11 @@ ehthumbs.db
 Thumbs.db
 
 # Logs
-logs
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+lerna-debug.log*
 
 # Runtime data
 pids
@@ -67,4 +86,11 @@ secrets/
 
 # Temporary files
 temp/
-tmp/ 
+tmp/
+
+# Temporary
+*.tmp
+*.temp
+
+# Vercel
+.vercel 

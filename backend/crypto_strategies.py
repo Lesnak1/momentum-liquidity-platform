@@ -492,6 +492,11 @@ class CryptoLMOStrategy:
             reward = abs(take_profit - ideal_entry)
             risk_reward = round(reward / risk, 2) if risk > 0 else 1.0
             
+            # KRİTİK: Crypto LMO için minimum 1.5 RR kontrolü!
+            if risk_reward < 1.5:
+                print(f"❌ {symbol} Crypto LMO sinyali reddedildi: RR {risk_reward} < 1.5 (Minimum RR standardı)")
+                return None
+            
             return {
                 'id': f"CRYPTO_LMO_{symbol.replace('/', '')}_{int(time.time())}",
                 'symbol': symbol,
@@ -561,7 +566,7 @@ class CryptoStrategyManager:
         
         # Eğer sadece biri varsa, tek başına yeterli güvenilirlikte mi kontrol et
         if kro_result and not lmo_result:
-            if kro_result['reliability_score'] >= 7:  # Crypto için biraz düşük eşik
+            if kro_result['reliability_score'] >= 7 and kro_result['risk_reward'] >= 1.5:  # Crypto için güvenilirlik + RR
                 kro_result['strategy'] = 'Crypto KRO (Strong)'
                 kro_result['analysis'] = f"Güçlü Crypto KRO: {kro_result['analysis']}"
                 return kro_result
@@ -569,7 +574,7 @@ class CryptoStrategyManager:
                 return None
         
         if lmo_result and not kro_result:
-            if lmo_result['reliability_score'] >= 7:
+            if lmo_result['reliability_score'] >= 7 and lmo_result['risk_reward'] >= 1.5:  # Crypto için güvenilirlik + RR
                 lmo_result['strategy'] = 'Crypto LMO (Strong)'  
                 lmo_result['analysis'] = f"Güçlü Crypto LMO: {lmo_result['analysis']}"
                 return lmo_result
@@ -610,6 +615,11 @@ class CryptoStrategyManager:
             risk = abs(combined_entry - combined_sl)
             reward = abs(combined_tp - combined_entry)
             risk_reward = round(reward / risk, 2) if risk > 0 else 1.0
+            
+            # KRİTİK: Combined Crypto stratejide de minimum 1.5 RR kontrolü!
+            if risk_reward < 1.5:
+                print(f"❌ {symbol} Crypto COMBINED sinyali reddedildi: RR {risk_reward} < 1.5 (Minimum RR standardı)")
+                return None
             
             # Birleşik analiz detayları
             kro_clean = kro_result['analysis'].replace('Crypto KRO: ', '')

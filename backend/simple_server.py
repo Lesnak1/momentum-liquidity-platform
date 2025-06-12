@@ -28,6 +28,11 @@ except ImportError as e:
     get_real_strategy_manager = None
     get_trade_monitor = None
 
+# KRİTİK: SABIT SİNYAL CACHE SİSTEMİ
+ACTIVE_SIGNALS_CACHE = {}
+SIGNAL_GENERATION_INTERVAL = 300  # 5 dakikada bir yeni sinyal üret
+LAST_SIGNAL_GENERATION = 0
+
 class TradingSignalHandler(BaseHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         # Global providers'ı başlat
@@ -125,112 +130,342 @@ class TradingSignalHandler(BaseHTTPRequestHandler):
             error_response = {'error': str(e)}
             self.wfile.write(json.dumps(error_response).encode('utf-8'))
     
-    def get_real_signals(self):
-        """Tüm gerçek sinyalleri getir"""
-        all_signals = []
+    def generate_new_signals_if_needed(self):
+        """Sadece gerektiğinde yeni sinyal üret - ENTRY/TP/SL SABİT KALSIN"""
+        global ACTIVE_SIGNALS_CACHE, LAST_SIGNAL_GENERATION
         
-        # CRYPTO SİNYALLERİ (Gerçek Binance verisi)
-        crypto_signals = self.get_crypto_signals()
-        if crypto_signals.get('signals'):
-            all_signals.extend(crypto_signals['signals'])
+        current_time = time.time()
         
-        # FOREX SİNYALLERİ (Gerçek ExchangeRate-API verisi)
-        forex_signals = self.get_forex_signals()
-        if forex_signals.get('signals'):
-            all_signals.extend(forex_signals['signals'])
-        
-        # Güvenilirlik skoruna göre sırala
-        all_signals.sort(key=lambda x: x.get('reliability_score', 0), reverse=True)
-        
-        return {
-            'signals': all_signals[:10],  # En iyi 10 sinyal
-            'total_count': len(all_signals),
-            'crypto_count': len(crypto_signals.get('signals', [])),
-            'forex_count': len(forex_signals.get('signals', [])),
-            'timestamp': datetime.now().isoformat(),
-            'data_source': 'REAL_APIS',
-            'sorted_by': 'reliability_score_desc',
-            'top_signals_only': True
-        }
-    
-    def get_crypto_signals(self):
-        """Gerçek kripto sinyalleri (Binance)"""
-        signals = []
-        
-        try:
-            if self.binance_provider and self.crypto_strategies:
-                # Gerçek Binance fiyatları al
-                crypto_prices = self.binance_provider.get_crypto_prices()
-                
-                for symbol, price_data in crypto_prices.items():
-                    try:
+        # 5 dakikada bir VEYA cache boşsa yeni sinyal üret
+        if (current_time - LAST_SIGNAL_GENERATION > SIGNAL_GENERATION_INTERVAL) or len(ACTIVE_SIGNALS_CACHE) == 0:
+            
+            print(f"🔄 Yeni sinyaller üretiliyor... Son: {datetime.fromtimestamp(LAST_SIGNAL_GENERATION).strftime('%H:%M:%S')}")
+            
+            # YENİ SİNYALLER ÜRET
+            new_signals = {}
+            
+            # CRYPTO SİNYALLERİ
+            try:
+                if self.binance_provider and self.crypto_strategies:
+                    crypto_prices = self.binance_provider.get_crypto_prices()
+                    
+                    for symbol, price_data in crypto_prices.items():
                         current_price = price_data['price']
                         
-                        # Her sembol için stratejileri analiz et
-                        symbol_signals = self.crypto_strategies.analyze_symbol(symbol, current_price)
-                        
-                        for signal in symbol_signals:
-                            signal['asset_type'] = 'crypto'
-                            signal['data_source'] = 'binance'
-                            signal['price_timestamp'] = price_data.get('timestamp')
-                            signals.append(signal)
-                    
-                    except Exception as e:
-                        print(f"❌ Crypto signal error {symbol}: {e}")
-                        continue
+                        # %30 şans ile bu symbol için sinyal üret
+                        if random.random() < 0.3:
+                            symbol_signals = self.crypto_strategies.analyze_symbol(symbol, current_price)
+                            
+                            for signal in symbol_signals:
+                                signal_id = f"CRYPTO_{symbol}_{int(current_time)}"
+                                signal['signal_id'] = signal_id
+                                signal['asset_type'] = 'crypto'
+                                signal['data_source'] = 'binance'
+                                signal['creation_time'] = datetime.now().isoformat()
+                                signal['status'] = 'ACTIVE'
+                                
+                                # SABİT DEĞERLER - BİR DAHA DEĞİŞMEYECEK
+                                signal['fixed_entry'] = signal['ideal_entry']
+                                signal['fixed_tp'] = signal['take_profit'] 
+                                signal['fixed_sl'] = signal['stop_loss']
+                                signal['fixed_strategy'] = signal['strategy']
+                                signal['fixed_signal_type'] = signal['signal_type']
+                                signal['fixed_reliability'] = signal['reliability_score']
+                                
+                                new_signals[signal_id] = signal
+                                
+            except Exception as e:
+                print(f"❌ Crypto signal generation error: {e}")
             
+            # FOREX SİNYALLERİ  
+            try:
+                if self.forex_provider and self.forex_strategies:
+                    forex_prices = self.forex_provider.get_forex_prices()
+                    
+                    for symbol, price_data in forex_prices.items():
+                        current_price = price_data['price']
+                        
+                        # %25 şans ile bu symbol için sinyal üret
+                        if random.random() < 0.25:
+                            symbol_signals = self.forex_strategies.analyze_symbol(symbol, current_price)
+                            
+                            for signal in symbol_signals:
+                                signal_id = f"FOREX_{symbol}_{int(current_time)}"
+                                signal['signal_id'] = signal_id
+                                signal['asset_type'] = 'forex'
+                                signal['data_source'] = 'exchangerate-api'
+                                signal['creation_time'] = datetime.now().isoformat()
+                                signal['status'] = 'ACTIVE'
+                                
+                                # SABİT DEĞERLER - BİR DAHA DEĞİŞMEYECEK
+                                signal['fixed_entry'] = signal['ideal_entry']
+                                signal['fixed_tp'] = signal['take_profit']
+                                signal['fixed_sl'] = signal['stop_loss'] 
+                                signal['fixed_strategy'] = signal['strategy']
+                                signal['fixed_signal_type'] = signal['signal_type']
+                                signal['fixed_reliability'] = signal['reliability_score']
+                                
+                                new_signals[signal_id] = signal
+                                
+            except Exception as e:
+                print(f"❌ Forex signal generation error: {e}")
+            
+            # Cache'i güncelle - ESKİ SİNYALLERİ KORU
+            for signal_id, signal in new_signals.items():
+                ACTIVE_SIGNALS_CACHE[signal_id] = signal
+            
+            # Maksimum 10 aktif sinyal tut
+            if len(ACTIVE_SIGNALS_CACHE) > 10:
+                # En eski sinyalleri sil
+                sorted_signals = sorted(ACTIVE_SIGNALS_CACHE.items(), 
+                                      key=lambda x: x[1].get('creation_time', ''), 
+                                      reverse=True)
+                ACTIVE_SIGNALS_CACHE = dict(sorted_signals[:10])
+            
+            LAST_SIGNAL_GENERATION = current_time
+            print(f"✅ {len(new_signals)} yeni sinyal üretildi. Toplam aktif: {len(ACTIVE_SIGNALS_CACHE)}")
+
+    def update_current_prices_only(self):
+        """Sadece güncel fiyatları güncelle - ENTRY/TP/SL DOKUNAMİYORUZ"""
+        global ACTIVE_SIGNALS_CACHE
+        
+        completed_trades = []  # Sonuçlanan trade'ler
+        
+        try:
+            # Crypto fiyatları güncelle
+            if self.binance_provider:
+                crypto_prices = self.binance_provider.get_crypto_prices()
+                
+                for signal_id, signal in list(ACTIVE_SIGNALS_CACHE.items()):
+                    if signal['asset_type'] == 'crypto':
+                        symbol = signal['symbol']
+                        if symbol in crypto_prices:
+                            current_price = crypto_prices[symbol]['price']
+                            
+                            # SADECE GÜNCEL FİYAT DEĞİŞİR
+                            signal['current_price'] = current_price
+                            signal['price_update_time'] = datetime.now().isoformat()
+                            
+                            # TP/SL KONTROLÜ - TRADE SONUÇLANMA
+                            trade_result = self.check_trade_completion(signal, current_price)
+                            if trade_result:
+                                completed_trades.append(trade_result)
+                                # Cache'den sil - trade sonuçlandı
+                                del ACTIVE_SIGNALS_CACHE[signal_id]
+                                print(f"✅ Trade sonuçlandı: {symbol} - {trade_result['result']}")
+            
+            # Forex fiyatları güncelle  
+            if self.forex_provider:
+                forex_prices = self.forex_provider.get_forex_prices()
+                
+                for signal_id, signal in list(ACTIVE_SIGNALS_CACHE.items()):
+                    if signal['asset_type'] == 'forex':
+                        symbol = signal['symbol']
+                        if symbol in forex_prices:
+                            current_price = forex_prices[symbol]['price']
+                            
+                            # SADECE GÜNCEL FİYAT DEĞİŞİR
+                            signal['current_price'] = current_price
+                            signal['price_update_time'] = datetime.now().isoformat()
+                            
+                            # TP/SL KONTROLÜ - TRADE SONUÇLANMA
+                            trade_result = self.check_trade_completion(signal, current_price)
+                            if trade_result:
+                                completed_trades.append(trade_result)
+                                # Cache'den sil - trade sonuçlandı
+                                del ACTIVE_SIGNALS_CACHE[signal_id]
+                                print(f"✅ Trade sonuçlandı: {symbol} - {trade_result['result']}")
+            
+            # Sonuçlanan trade'leri kaydet
+            if completed_trades and self.trade_monitor:
+                for trade in completed_trades:
+                    self.trade_monitor.record_completed_trade(trade)
+                    
         except Exception as e:
-            print(f"❌ Crypto signals genel hatası: {e}")
+            print(f"❌ Price update error: {e}")
+    
+    def check_trade_completion(self, signal, current_price):
+        """TP/SL kontrolü ile trade sonuçlanma tespiti"""
+        
+        entry_price = signal['fixed_entry']
+        take_profit = signal['fixed_tp'] 
+        stop_loss = signal['fixed_sl']
+        signal_type = signal['fixed_signal_type']
+        
+        # BUY sinyali kontrolü
+        if signal_type == 'BUY':
+            # TP hit - Kazanç
+            if current_price >= take_profit:
+                pip_gain = abs(take_profit - entry_price)
+                return {
+                    'signal_id': signal['signal_id'],
+                    'symbol': signal['symbol'],
+                    'strategy': signal['fixed_strategy'],
+                    'signal_type': signal_type,
+                    'entry_price': entry_price,
+                    'exit_price': current_price,
+                    'take_profit': take_profit,
+                    'stop_loss': stop_loss,
+                    'result': 'PROFIT',  # KAZANÇ
+                    'result_type': 'TP_HIT',
+                    'pip_gain': pip_gain,
+                    'reliability_score': signal['fixed_reliability'],
+                    'entry_time': signal['creation_time'],
+                    'exit_time': datetime.now().isoformat(),
+                    'asset_type': signal['asset_type']
+                }
+            
+            # SL hit - Kayıp  
+            elif current_price <= stop_loss:
+                pip_loss = abs(entry_price - stop_loss)
+                return {
+                    'signal_id': signal['signal_id'],
+                    'symbol': signal['symbol'], 
+                    'strategy': signal['fixed_strategy'],
+                    'signal_type': signal_type,
+                    'entry_price': entry_price,
+                    'exit_price': current_price,
+                    'take_profit': take_profit,
+                    'stop_loss': stop_loss,
+                    'result': 'LOSS',  # KAYIP
+                    'result_type': 'SL_HIT',
+                    'pip_loss': pip_loss,
+                    'reliability_score': signal['fixed_reliability'],
+                    'entry_time': signal['creation_time'],
+                    'exit_time': datetime.now().isoformat(),
+                    'asset_type': signal['asset_type']
+                }
+        
+        # SAT sinyali kontrolü
+        elif signal_type == 'SAT':
+            # TP hit - Kazanç (fiyat düştü)
+            if current_price <= take_profit:
+                pip_gain = abs(entry_price - take_profit)
+                return {
+                    'signal_id': signal['signal_id'],
+                    'symbol': signal['symbol'],
+                    'strategy': signal['fixed_strategy'], 
+                    'signal_type': signal_type,
+                    'entry_price': entry_price,
+                    'exit_price': current_price,
+                    'take_profit': take_profit,
+                    'stop_loss': stop_loss,
+                    'result': 'PROFIT',  # KAZANÇ
+                    'result_type': 'TP_HIT',
+                    'pip_gain': pip_gain,
+                    'reliability_score': signal['fixed_reliability'],
+                    'entry_time': signal['creation_time'],
+                    'exit_time': datetime.now().isoformat(),
+                    'asset_type': signal['asset_type']
+                }
+            
+            # SL hit - Kayıp (fiyat yükseldi)
+            elif current_price >= stop_loss:
+                pip_loss = abs(stop_loss - entry_price)
+                return {
+                    'signal_id': signal['signal_id'],
+                    'symbol': signal['symbol'],
+                    'strategy': signal['fixed_strategy'],
+                    'signal_type': signal_type,
+                    'entry_price': entry_price,
+                    'exit_price': current_price,
+                    'take_profit': take_profit,
+                    'stop_loss': stop_loss,
+                    'result': 'LOSS',  # KAYIP
+                    'result_type': 'SL_HIT', 
+                    'pip_loss': pip_loss,
+                    'reliability_score': signal['fixed_reliability'],
+                    'entry_time': signal['creation_time'],
+                    'exit_time': datetime.now().isoformat(),
+                    'asset_type': signal['asset_type']
+                }
+        
+        # Henüz sonuçlanmadı
+        return None
+    
+    def get_real_signals(self):
+        """SABİT sinyalleri döndür - Entry/TP/SL asla değişmez"""
+        
+        # 1. Gerekirse yeni sinyal üret
+        self.generate_new_signals_if_needed()
+        
+        # 2. Sadece current price'ları güncelle
+        self.update_current_prices_only()
+        
+        # 3. Aktif sinyalleri döndür
+        active_signals = []
+        
+        for signal_id, signal in ACTIVE_SIGNALS_CACHE.items():
+            # Frontend için uygun format
+            formatted_signal = {
+                'signal_id': signal_id,
+                'symbol': signal['symbol'],
+                'strategy': signal['fixed_strategy'],
+                'signal_type': signal['fixed_signal_type'],
+                'timeframe': signal.get('timeframe', '15m'),
+                
+                # SABİT DEĞERLER - ASLA DEĞİŞMEZ
+                'ideal_entry': signal['fixed_entry'],
+                'take_profit': signal['fixed_tp'],
+                'stop_loss': signal['fixed_sl'],
+                'reliability_score': signal['fixed_reliability'],
+                
+                # SADECE BU DEĞİŞİR
+                'current_price': signal.get('current_price', signal['fixed_entry']),
+                
+                'status': 'ACTIVE',
+                'creation_time': signal['creation_time'],
+                'price_update_time': signal.get('price_update_time', signal['creation_time']),
+                'asset_type': signal['asset_type'],
+                'data_source': signal['data_source']
+            }
+            
+            active_signals.append(formatted_signal)
         
         # Güvenilirlik skoruna göre sırala
-        signals.sort(key=lambda x: x.get('reliability_score', 0), reverse=True)
+        active_signals.sort(key=lambda x: x['reliability_score'], reverse=True)
         
         return {
-            'signals': signals,
-            'count': len(signals),
+            'signals': active_signals,
+            'total_count': len(active_signals),
+            'cache_info': {
+                'last_generation': datetime.fromtimestamp(LAST_SIGNAL_GENERATION).isoformat(),
+                'next_generation_in': max(0, SIGNAL_GENERATION_INTERVAL - (time.time() - LAST_SIGNAL_GENERATION)),
+                'fixed_signals': True,
+                'only_prices_update': True
+            },
+            'timestamp': datetime.now().isoformat(),
+            'data_source': 'CACHED_FIXED_SIGNALS'
+        }
+
+    def get_crypto_signals(self):
+        """Crypto sinyalleri - cache'den al"""
+        self.generate_new_signals_if_needed()
+        self.update_current_prices_only()
+        
+        crypto_signals = [signal for signal in ACTIVE_SIGNALS_CACHE.values() 
+                         if signal['asset_type'] == 'crypto']
+        
+        return {
+            'signals': crypto_signals,
+            'count': len(crypto_signals),
             'asset_type': 'crypto',
-            'data_source': 'binance',
-            'sorted_by': 'reliability_score'
+            'data_source': 'cached_binance'
         }
     
     def get_forex_signals(self):
-        """Gerçek forex sinyalleri (ExchangeRate-API)"""
-        signals = []
+        """Forex sinyalleri - cache'den al"""
+        self.generate_new_signals_if_needed() 
+        self.update_current_prices_only()
         
-        try:
-            if self.forex_provider and self.forex_strategies:
-                # Gerçek forex fiyatları al
-                forex_prices = self.forex_provider.get_forex_prices()
-                
-                for symbol, price_data in forex_prices.items():
-                    try:
-                        current_price = price_data['price']
-                        
-                        # Her sembol için stratejileri analiz et
-                        symbol_signals = self.forex_strategies.analyze_symbol(symbol, current_price)
-                        
-                        for signal in symbol_signals:
-                            signal['asset_type'] = 'forex'
-                            signal['data_source'] = price_data.get('source', 'forex-api')
-                            signal['price_timestamp'] = price_data.get('timestamp')
-                            signals.append(signal)
-                    
-                    except Exception as e:
-                        print(f"❌ Forex signal error {symbol}: {e}")
-                        continue
-            
-        except Exception as e:
-            print(f"❌ Forex signals genel hatası: {e}")
-        
-        # Güvenilirlik skoruna göre sırala
-        signals.sort(key=lambda x: x.get('reliability_score', 0), reverse=True)
+        forex_signals = [signal for signal in ACTIVE_SIGNALS_CACHE.values()
+                        if signal['asset_type'] == 'forex']
         
         return {
-            'signals': signals,
-            'count': len(signals),
-            'asset_type': 'forex',
-            'data_source': 'exchangerate-api',
-            'sorted_by': 'reliability_score'
+            'signals': forex_signals,
+            'count': len(forex_signals),
+            'asset_type': 'forex', 
+            'data_source': 'cached_exchangerate'
         }
     
     def get_trade_statistics(self):
