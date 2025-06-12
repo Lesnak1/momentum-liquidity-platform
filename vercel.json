@@ -1,17 +1,17 @@
 {
-  "version": 2,
+  "framework": "create-react-app",
   "buildCommand": "cd frontend && npm run build",
   "outputDirectory": "frontend/build",
-  "builds": [
-    {
-      "src": "backend/vercel_app.py",
-      "use": "@vercel/python"
-    }
-  ],
+  "functions": {
+    "backend/vercel_app.py": "@vercel/python"
+  },
   "routes": [
     {
       "src": "/api/(.*)",
       "dest": "/backend/vercel_app.py"
+    },
+    {
+      "handle": "filesystem"
     },
     {
       "src": "/(.*)",
