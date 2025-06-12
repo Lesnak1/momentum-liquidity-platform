@@ -178,5 +178,5 @@ async def trade_statistics():
         "recent_trades": []
     }
 
-# Vercel handler
+# Vercel handler (ASGI uyumlu)
 handler = app 
