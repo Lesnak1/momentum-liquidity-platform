@@ -1,0 +1,377 @@
+/* Trade Statistics - Modern UI */
+.trade-statistics {
+    margin: 30px 0;
+    width: 100%;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 25px;
+    margin-bottom: 30px;
+}
+
+/* Stat Card Base */
+.stat-card {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    border-radius: 20px;
+    padding: 25px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.4s ease;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.stat-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    animation: shimmer 3s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+    0%, 100% { opacity: 0.7; }
+    50% { opacity: 1; }
+}
+
+/* Primary Card (Win/Loss) */
+.stat-card.primary::before {
+    background: linear-gradient(90deg, #667eea, #764ba2);
+}
+
+.stat-card.secondary::before {
+    background: linear-gradient(90deg, #f093fb, #f5576c);
+}
+
+.stat-card.accent::before {
+    background: linear-gradient(90deg, #4facfe, #00f2fe);
+}
+
+/* Stat Header */
+.stat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.stat-header h3 {
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0;
+    letter-spacing: 0.5px;
+}
+
+.stat-icon {
+    font-size: 24px;
+    opacity: 0.8;
+}
+
+/* Win/Loss Display */
+.win-loss-display {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 15px;
+}
+
+.win-section, .loss-section {
+    text-align: center;
+    flex: 1;
+}
+
+.win-section .count, .loss-section .count {
+    font-size: 32px;
+    font-weight: bold;
+    color: white;
+    margin-bottom: 5px;
+}
+
+.win-section .label, .loss-section .label {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.win-section .label {
+    color: #2ecc71;
+}
+
+.loss-section .label {
+    color: #e74c3c;
+}
+
+.vs-divider {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 12px;
+    font-weight: 600;
+    margin: 0 10px;
+}
+
+.win-rate {
+    text-align: center;
+    font-size: 16px;
+    font-weight: bold;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Pip Display */
+.pip-display {
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+.pip-count {
+    font-size: 36px;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.pip-label {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 600;
+    letter-spacing: 1px;
+}
+
+.pip-trend {
+    text-align: center;
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.8);
+    background: rgba(255, 255, 255, 0.05);
+    padding: 8px 15px;
+    border-radius: 20px;
+}
+
+/* Total Trades */
+.total-trades {
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+.trade-count {
+    font-size: 42px;
+    font-weight: bold;
+    color: white;
+    margin-bottom: 5px;
+}
+
+.trade-label {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 500;
+}
+
+.platform-status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: #2ecc71;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    background: #2ecc71;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(1.1); }
+}
+
+/* Recent Trades Section */
+.recent-trades-section {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(15px);
+    border-radius: 20px;
+    padding: 25px;
+    margin-bottom: 25px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.section-title {
+    color: white;
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.recent-trades-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.trade-item {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 15px;
+    align-items: center;
+    padding: 15px 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    border-left: 4px solid transparent;
+}
+
+.trade-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateX(5px);
+}
+
+.trade-item.WIN {
+    border-left-color: #2ecc71;
+}
+
+.trade-item.LOSS {
+    border-left-color: #e74c3c;
+}
+
+.trade-symbol {
+    font-weight: bold;
+    color: white;
+    font-size: 14px;
+}
+
+.trade-type {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.trade-result {
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.trade-time {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 12px;
+    text-align: right;
+}
+
+/* Performance Badge */
+.performance-badge {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 20px;
+    padding: 25px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.performance-badge::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transform: rotate(45deg);
+    animation: shine 3s ease-in-out infinite;
+}
+
+@keyframes shine {
+    0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+    50% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+    100% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+}
+
+.badge-content {
+    position: relative;
+    z-index: 1;
+}
+
+.badge-text {
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    display: block;
+    margin-bottom: 15px;
+}
+
+.performance-indicators {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 15px;
+}
+
+.indicator {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.indicator-label {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.indicator-value {
+    color: white;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .trade-item {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+    
+    .trade-time {
+        grid-column: 1 / -1;
+        text-align: left;
+        margin-top: 5px;
+    }
+    
+    .performance-indicators {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .win-loss-display {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .vs-divider {
+        transform: rotate(90deg);
+    }
+    
+    .stat-card {
+        padding: 20px;
+    }
+} 

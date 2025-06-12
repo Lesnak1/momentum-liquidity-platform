@@ -1,0 +1,397 @@
+/* Trading Card Stilleri */
+.trading-card {
+    width: 350px;
+    margin: 15px;
+    border-radius: 15px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    background: #ffffff;
+    border: 1px solid #e0e0e0;
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.trading-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
+}
+
+/* Sinyal Başlığı */
+.signal-header {
+    padding: 15px 20px;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: bold;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.signal-status {
+    font-size: 16px;
+    letter-spacing: 0.5px;
+}
+
+.reliability-score {
+    font-size: 14px;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 4px 12px;
+    border-radius: 20px;
+    backdrop-filter: blur(10px);
+}
+
+/* Parite Bilgileri */
+.pair-info {
+    padding: 20px;
+    text-align: center;
+}
+
+.pair-name {
+    font-size: 28px;
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 8px;
+}
+
+.current-price {
+    font-size: 18px;
+    color: #34495e;
+    margin-bottom: 10px;
+}
+
+.strategy-info {
+    font-size: 14px;
+    color: #7f8c8d;
+    font-style: italic;
+}
+
+/* Ayırıcı */
+.divider {
+    height: 1px;
+    background: linear-gradient(to right, transparent, #bdc3c7, transparent);
+    margin: 0 20px;
+}
+
+/* Sinyal Detayları */
+.signal-details {
+    padding: 20px;
+}
+
+.price-levels {
+    margin-bottom: 15px;
+}
+
+.price-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding: 8px 0;
+}
+
+.price-row .label {
+    font-weight: 500;
+    color: #34495e;
+    font-size: 14px;
+}
+
+.price-row .value {
+    font-weight: bold;
+    font-size: 15px;
+    color: #2c3e50;
+}
+
+.price-row .value.green {
+    color: #27ae60;
+}
+
+.price-row .value.red {
+    color: #e74c3c;
+}
+
+/* Sinyal Badge'leri */
+.signal-badge {
+    text-align: center;
+    padding: 10px;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+}
+
+.active-signal {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    color: white;
+    animation: pulse 2s infinite;
+}
+
+.new-signal {
+    background: linear-gradient(135deg, #f39c12, #e67e22);
+    color: white;
+    animation: newSignalGlow 1.5s ease-in-out infinite;
+    border: 2px solid #f1c40f;
+    box-shadow: 0 0 15px rgba(243, 156, 18, 0.5);
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+}
+
+@keyframes newSignalGlow {
+    0% { 
+        box-shadow: 0 0 15px rgba(243, 156, 18, 0.5);
+        transform: scale(1);
+    }
+    50% { 
+        box-shadow: 0 0 25px rgba(243, 156, 18, 0.8);
+        transform: scale(1.03);
+    }
+    100% { 
+        box-shadow: 0 0 15px rgba(243, 156, 18, 0.5);
+        transform: scale(1);
+    }
+}
+
+/* Sinyal Sonucu */
+.signal-result {
+    padding: 20px;
+    text-align: center;
+}
+
+.result-badge {
+    padding: 12px 20px;
+    border-radius: 25px;
+    font-weight: bold;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+}
+
+.result-badge.success {
+    background: linear-gradient(135deg, #27ae60, #2ecc71);
+    color: white;
+}
+
+.result-badge.failure {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    color: white;
+}
+
+/* Sinyal Aranıyor */
+.no-signal {
+    padding: 20px;
+    text-align: center;
+}
+
+.searching-badge {
+    background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 25px;
+    font-weight: bold;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+    animation: searching 1.5s ease-in-out infinite;
+}
+
+@keyframes searching {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+.no-signal p {
+    color: #7f8c8d;
+    font-size: 13px;
+    margin: 0;
+}
+
+/* Geçmiş İşlemler */
+.past-trades {
+    padding: 20px;
+}
+
+.section-title {
+    font-weight: bold;
+    font-size: 14px;
+    color: #2c3e50;
+    margin-bottom: 15px;
+    letter-spacing: 0.5px;
+}
+
+.trades-list {
+    space-y: 8px;
+}
+
+.trade-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    transition: background 0.2s ease;
+}
+
+.trade-row:hover {
+    background: #e9ecef;
+}
+
+.trade-date {
+    font-size: 12px;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.trade-result {
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.trade-result.green {
+    color: #27ae60;
+}
+
+.trade-result.red {
+    color: #e74c3c;
+}
+
+.no-trades {
+    text-align: center;
+    color: #95a5a6;
+    font-style: italic;
+    font-size: 13px;
+    padding: 20px 0;
+}
+
+/* Responsive Design - Geliştirilmiş */
+@media (max-width: 768px) {
+    .trading-card {
+        width: 100%;
+        margin: 10px 0;
+        padding: 20px;
+    }
+    
+    .pair-name {
+        font-size: 22px;
+    }
+    
+    .current-price {
+        font-size: 16px;
+    }
+
+    .signal-header {
+        padding: 15px;
+    }
+
+    .reliability-score {
+        font-size: 11px;
+        padding: 4px 8px;
+    }
+
+    .price-levels {
+        padding: 15px;
+    }
+
+    .price-row {
+        margin-bottom: 10px;
+    }
+
+    .price-row .label,
+    .price-row .value {
+        font-size: 13px;
+    }
+
+    .past-trades {
+        padding: 15px;
+    }
+
+    .section-title {
+        font-size: 13px;
+    }
+
+    .trade-row {
+        padding: 6px 10px;
+    }
+
+    .trade-date,
+    .trade-result {
+        font-size: 11px;
+    }
+}
+
+@media (max-width: 480px) {
+    .trading-card {
+        padding: 15px;
+    }
+
+    .pair-name {
+        font-size: 20px;
+    }
+
+    .current-price {
+        font-size: 14px;
+    }
+
+    .signal-header {
+        padding: 12px;
+    }
+
+    .price-levels {
+        padding: 12px;
+    }
+
+    .past-trades {
+        padding: 12px;
+    }
+
+    .signal-badge,
+    .result-badge,
+    .searching-badge {
+        padding: 8px 16px;
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 360px) {
+    .trading-card {
+        padding: 12px;
+    }
+
+    .pair-name {
+        font-size: 18px;
+    }
+
+    .current-price {
+        font-size: 13px;
+    }
+}
+
+/* Dark Mode Support (Gelecek için) */
+@media (prefers-color-scheme: dark) {
+    .trading-card {
+        background: #2c3e50;
+        border-color: #34495e;
+        color: #ecf0f1;
+    }
+    
+    .pair-name,
+    .price-row .label,
+    .price-row .value,
+    .section-title {
+        color: #ecf0f1;
+    }
+    
+    .current-price {
+        color: #bdc3c7;
+    }
+    
+    .trade-row {
+        background: #34495e;
+    }
+    
+    .trade-row:hover {
+        background: #3e5268;
+    }
+} 

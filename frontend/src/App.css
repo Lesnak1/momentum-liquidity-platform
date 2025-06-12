@@ -1,0 +1,345 @@
+/* Ana Uygulama Stilleri - Ultra Modern */
+.App {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+  background-size: 400% 400%;
+  animation: gradientShift 15s ease infinite;
+  font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  position: relative;
+  overflow-x: hidden;
+}
+
+.App::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: 
+    radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 40% 80%, rgba(255, 255, 255, 0.06) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes gradientShift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* Header Stilleri - Premium */
+.app-header {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(30px);
+  color: white;
+  padding: 40px 20px;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+  z-index: 10;
+}
+
+.app-header h1 {
+  margin: 0 0 15px 0;
+  font-size: 3rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #ffffff, #f0f0f0);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  letter-spacing: -1px;
+}
+
+.app-header h2 {
+  margin: 0 0 25px 0;
+  font-size: 1.3rem;
+  font-weight: 400;
+  opacity: 0.9;
+  color: rgba(255, 255, 255, 0.9);
+  letter-spacing: 0.5px;
+}
+
+.status-info {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.status-badge {
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: bold;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+}
+
+.status-badge.active {
+  background: linear-gradient(135deg, #27ae60, #2ecc71);
+  color: white;
+  animation: statusPulse 2s infinite;
+  box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);
+}
+
+.status-badge.error {
+  background: linear-gradient(135deg, #e74c3c, #c0392b);
+  color: white;
+  animation: errorPulse 1.5s infinite;
+  box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
+}
+
+@keyframes statusPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+@keyframes errorPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.02); opacity: 0.8; }
+}
+
+.analysis-info {
+  font-size: 14px;
+  opacity: 0.8;
+  font-weight: 300;
+}
+
+/* Dashboard Stilleri - Premium */
+.trading-dashboard {
+  padding: 50px 20px;
+  max-width: 1500px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 5;
+}
+
+.statistics-section {
+  margin-bottom: 60px;
+}
+
+.market-section {
+  margin-bottom: 60px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.section-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: white;
+  margin: 0;
+  background: linear-gradient(135deg, #ffffff, #f8f9fa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  letter-spacing: -0.5px;
+}
+
+.section-badge {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  padding: 8px 20px;
+  border-radius: 25px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+.section-badge:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-2px);
+}
+
+.section-badge .badge-text {
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.crypto-badge {
+  background: linear-gradient(135deg, #f093fb, #f5576c);
+  border: none;
+}
+
+.crypto-badge .badge-text {
+  color: white;
+}
+
+.cards-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+  gap: 35px;
+  justify-items: center;
+  padding: 0 15px;
+}
+
+/* Footer Stilleri */
+.app-footer {
+  background: linear-gradient(135deg, #2c3e50, #34495e);
+  color: white;
+  padding: 30px 20px;
+  text-align: center;
+  margin-top: auto;
+}
+
+.app-footer p {
+  margin: 0 0 15px 0;
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+.performance-summary {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.performance-summary span {
+  padding: 5px 0;
+}
+
+/* Responsive Design */
+/* Responsive Design - Geliştirilmiş Mobil */
+@media (max-width: 1200px) {
+  .cards-container {
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 30px;
+  }
+}
+
+@media (max-width: 768px) {
+  .app-header {
+    padding: 30px 15px;
+  }
+
+  .app-header h1 {
+    font-size: 2.2rem;
+    margin-bottom: 10px;
+  }
+
+  .app-header h2 {
+    font-size: 1.1rem;
+    margin-bottom: 20px;
+  }
+
+  .status-info {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .status-badge {
+    padding: 6px 14px;
+    font-size: 11px;
+  }
+
+  .analysis-info {
+    font-size: 12px;
+  }
+
+  .trading-dashboard {
+    padding: 30px 15px;
+  }
+
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+
+  .section-title {
+    font-size: 24px;
+  }
+
+  .cards-container {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    padding: 0 5px;
+  }
+
+  .section-badge {
+    padding: 6px 16px;
+    width: 100%;
+    text-align: center;
+  }
+
+  .section-badge .badge-text {
+    font-size: 13px;
+  }
+
+  .performance-summary {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .performance-summary span {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-header {
+    padding: 25px 10px;
+  }
+
+  .app-header h1 {
+    font-size: 1.8rem;
+    letter-spacing: -0.5px;
+  }
+
+  .app-header h2 {
+    font-size: 1rem;
+  }
+
+  .trading-dashboard {
+    padding: 20px 8px;
+  }
+
+  .section-title {
+    font-size: 20px;
+  }
+
+  .statistics-section,
+  .market-section {
+    margin-bottom: 40px;
+  }
+
+  .app-footer {
+    padding: 20px 10px;
+  }
+
+  .app-footer p {
+    font-size: 12px;
+  }
+}
+
+/* Ultra küçük ekranlar için */
+@media (max-width: 360px) {
+  .app-header h1 {
+    font-size: 1.6rem;
+  }
+
+  .trading-dashboard {
+    padding: 15px 5px;
+  }
+
+  .cards-container {
+    gap: 15px;
+  }
+}

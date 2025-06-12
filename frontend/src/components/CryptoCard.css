@@ -1,0 +1,344 @@
+/* Kripto Card Stilleri - TradingCard Benzeri */
+.crypto-card {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    border-radius: 16px;
+    padding: 0;
+    margin: 15px;
+    width: 320px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.crypto-card.has-signal {
+    background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+    border: 2px solid #27ae60;
+    box-shadow: 0 8px 32px rgba(39, 174, 96, 0.3);
+}
+
+.crypto-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 40px rgba(39, 174, 96, 0.4);
+}
+
+/* Kripto Header */
+.crypto-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+.symbol-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.crypto-symbol {
+    font-size: 24px;
+    font-weight: bold;
+    color: white;
+    margin: 0;
+}
+
+.crypto-symbol .pair {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 500;
+}
+
+.live-indicator {
+    display: flex;
+    align-items: center;
+    margin-top: 5px;
+}
+
+.live-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #27ae60;
+    margin-right: 6px;
+    animation: pulse-dot 2s infinite;
+}
+
+@keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(1.2); }
+}
+
+.live-indicator {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 500;
+}
+
+.price-change {
+    text-align: right;
+}
+
+.price-change.positive {
+    color: #27ae60;
+}
+
+.price-change.negative {
+    color: #e74c3c;
+}
+
+/* Fiyat Bölümü */
+.current-price-section {
+    padding: 20px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.price {
+    font-size: 32px;
+    font-weight: bold;
+    color: white;
+    margin-bottom: 5px;
+    letter-spacing: -1px;
+}
+
+.price-label {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 500;
+}
+
+/* Sinyal Bölümü */
+.signal-section {
+    margin: 0 20px;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+}
+
+.signal-section.active {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.signal-section.waiting {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    text-align: center;
+}
+
+.signal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.signal-type {
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.signal-type.buy {
+    background: linear-gradient(90deg, #27ae60, #2ecc71);
+    color: white;
+}
+
+.signal-type.sell {
+    background: linear-gradient(90deg, #e74c3c, #c0392b);
+    color: white;
+}
+
+.reliability-badge {
+    padding: 4px 12px;
+    border-radius: 15px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.reliability-badge.high {
+    background: #27ae60;
+    color: white;
+}
+
+.reliability-badge.medium {
+    background: #f39c12;
+    color: white;
+}
+
+.strategy-info {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 15px;
+    font-style: italic;
+}
+
+.price-levels {
+    margin: 15px 0;
+}
+
+.level-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.level-row:last-child {
+    border-bottom: none;
+}
+
+.level-label {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 500;
+}
+
+.level-value {
+    font-size: 13px;
+    font-weight: bold;
+    color: white;
+}
+
+.level-value.success {
+    color: #27ae60;
+}
+
+.level-value.danger {
+    color: #e74c3c;
+}
+
+.signal-status {
+    text-align: center;
+    margin-top: 15px;
+}
+
+.status-badge {
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    display: inline-block;
+}
+
+.status-badge.active-signal {
+    background: linear-gradient(90deg, #f39c12, #e67e22);
+    color: white;
+    animation: glow 2s ease-in-out infinite;
+}
+
+@keyframes glow {
+    0%, 100% { box-shadow: 0 0 15px rgba(243, 156, 18, 0.4); }
+    50% { box-shadow: 0 0 25px rgba(243, 156, 18, 0.6); }
+}
+
+.waiting-signal {
+    padding: 20px 0;
+}
+
+.waiting-text {
+    font-size: 16px;
+    font-weight: bold;
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 8px;
+}
+
+.waiting-description {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+    font-style: italic;
+}
+
+.no-signal-info {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+    margin-top: 10px;
+}
+
+/* Stats Bölümü */
+.stats-section {
+    padding: 15px 20px;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+}
+
+.stat-label {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 500;
+}
+
+.stat-value {
+    font-size: 12px;
+    font-weight: bold;
+    color: white;
+}
+
+/* WebSocket Durumu */
+.websocket-status {
+    padding: 15px 20px;
+    background: rgba(255, 255, 255, 0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.status-indicator {
+    display: flex;
+    align-items: center;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #27ae60;
+    margin-right: 8px;
+    animation: pulse-dot 2s infinite;
+}
+
+.status-text {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 500;
+}
+
+.data-source {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .crypto-card {
+        width: 100%;
+        margin: 10px 0;
+    }
+    
+    .crypto-header {
+        padding: 15px;
+    }
+    
+    .signal-section {
+        margin: 0 15px;
+        padding: 15px;
+    }
+}
+
+/* Dark Mode Uyumu */
+@media (prefers-color-scheme: dark) {
+    .crypto-card {
+        border-color: rgba(255, 255, 255, 0.15);
+    }
+} 
