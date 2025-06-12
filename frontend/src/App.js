@@ -328,15 +328,17 @@ function App() {
           </div>
           <div className="cards-container">
             {cryptoData && Object.entries(cryptoData)
-              .map(([symbol, price]) => {
+              .map(([symbol, priceData]) => {
                 // Bu kripto için sinyal var mı kontrol et
                 const cryptoSignal = cryptoSignals.find(signal => signal.symbol === symbol);
                 
-                // Fiyat data formatına çevir
+                // Binance API'den gelen gerçek data formatı
                 const data = {
-                  price: price,
-                  change_24h: (Math.random() - 0.5) * 10, // ±%5 değişim
-                  volume_24h: Math.random() * 1e9 // 0-1B hacim
+                  price: priceData.price || priceData, // API format compatibility
+                  change_24h: priceData.change_24h || 0,
+                  volume_24h: priceData.volume_24h || 0,
+                  high_24h: priceData.high_24h || (priceData.price || priceData),
+                  low_24h: priceData.low_24h || (priceData.price || priceData)
                 };
                 
                 return { symbol, data, signal: cryptoSignal };

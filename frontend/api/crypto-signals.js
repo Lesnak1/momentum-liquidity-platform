@@ -1,23 +1,46 @@
 // Vercel Serverless Function: Crypto Signals
 let cryptoSignalCache = [];
 
-function generateCryptoSignal(symbol) {
+async function generateCryptoSignal(symbol) {
   const signals = ['BUY', 'SAT'];
   const strategies = ['KRO', 'LMO'];
   
   const signal_type = signals[Math.floor(Math.random() * signals.length)];
   const strategy = strategies[Math.floor(Math.random() * strategies.length)];
   
-  const basePrices = {
-    'BTCUSDT': 96840,
-    'ETHUSDT': 3420,
-    'BNBUSDT': 710,
-    'ADAUSDT': 1.12,
-    'SOLUSDT': 235.50,
-    'DOGEUSDT': 0.395,
-    'MATICUSDT': 0.575,
-    'DOTUSDT': 8.45
-  };
+  // Gerçek anlık fiyatları al
+  let basePrices = {};
+  
+  try {
+    // Binance API'den güncel fiyatları çek
+    const response = await fetch('https://api.binance.com/api/v3/ticker/price');
+    if (response.ok) {
+      const allPrices = await response.json();
+      const symbols = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'ADAUSDT', 'SOLUSDT', 'DOGEUSDT', 'MATICUSDT', 'DOTUSDT'];
+      
+      allPrices.forEach(ticker => {
+        if (symbols.includes(ticker.symbol)) {
+          basePrices[ticker.symbol] = parseFloat(ticker.price);
+        }
+      });
+    }
+  } catch (error) {
+    console.warn('Binance API failed for signals, using fallback prices');
+  }
+  
+  // Fallback fiyatları
+  if (Object.keys(basePrices).length === 0) {
+    basePrices = {
+      'BTCUSDT': 107000,
+      'ETHUSDT': 3900,
+      'BNBUSDT': 685,
+      'ADAUSDT': 0.91,
+      'SOLUSDT': 193.50,
+      'DOGEUSDT': 0.315,
+      'MATICUSDT': 0.485,
+      'DOTUSDT': 7.22
+    };
+  }
   
   const basePrice = basePrices[symbol] || 1.0000;
   const ideal_entry = basePrice + (Math.random() - 0.5) * basePrice * 0.02;
@@ -45,14 +68,14 @@ function generateCryptoSignal(symbol) {
   };
 }
 
-export default function handler(req, res) {
+export default async function handler(req, res) {
   // %25 şans ile yeni kripto sinyali
   if (Math.random() < 0.25) {
     const symbols = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'ADAUSDT', 'SOLUSDT', 'DOGEUSDT', 'MATICUSDT', 'DOTUSDT'];
     const randomSymbol = symbols[Math.floor(Math.random() * symbols.length)];
     
     const existingIndex = cryptoSignalCache.findIndex(s => s.symbol === randomSymbol);
-    const newSignal = generateCryptoSignal(randomSymbol);
+    const newSignal = await generateCryptoSignal(randomSymbol);
     
     if (existingIndex >= 0) {
       cryptoSignalCache[existingIndex] = newSignal;
