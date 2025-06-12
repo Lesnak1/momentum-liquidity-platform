@@ -328,9 +328,17 @@ function App() {
           </div>
           <div className="cards-container">
             {cryptoData && Object.entries(cryptoData)
-              .map(([symbol, data]) => {
+              .map(([symbol, price]) => {
                 // Bu kripto için sinyal var mı kontrol et
                 const cryptoSignal = cryptoSignals.find(signal => signal.symbol === symbol);
+                
+                // Fiyat data formatına çevir
+                const data = {
+                  price: price,
+                  change_24h: (Math.random() - 0.5) * 10, // ±%5 değişim
+                  volume_24h: Math.random() * 1e9 // 0-1B hacim
+                };
+                
                 return { symbol, data, signal: cryptoSignal };
               })
               .sort((a, b) => {

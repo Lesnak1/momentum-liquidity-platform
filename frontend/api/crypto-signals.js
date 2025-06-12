@@ -1,7 +1,70 @@
 // Vercel Serverless Function: Crypto Signals
 let cryptoSignalCache = [];
 
+function generateCryptoSignal(symbol) {
+  const signals = ['BUY', 'SAT'];
+  const strategies = ['KRO', 'LMO'];
+  
+  const signal_type = signals[Math.floor(Math.random() * signals.length)];
+  const strategy = strategies[Math.floor(Math.random() * strategies.length)];
+  
+  const basePrices = {
+    'BTCUSDT': 42500,
+    'ETHUSDT': 2800,
+    'BNBUSDT': 320,
+    'ADAUSDT': 0.38,
+    'SOLUSDT': 95.50,
+    'DOGEUSDT': 0.078,
+    'MATICUSDT': 0.85,
+    'DOTUSDT': 5.25
+  };
+  
+  const basePrice = basePrices[symbol] || 1.0000;
+  const ideal_entry = basePrice + (Math.random() - 0.5) * basePrice * 0.02;
+  
+  const percentChange = 0.02 + Math.random() * 0.03; // %2-5 arası
+  const take_profit = signal_type === 'BUY' 
+    ? ideal_entry * (1 + percentChange)
+    : ideal_entry * (1 - percentChange);
+    
+  const stop_loss = signal_type === 'BUY' 
+    ? ideal_entry * (1 - percentChange * 0.5)
+    : ideal_entry * (1 + percentChange * 0.5);
+  
+  return {
+    symbol,
+    strategy,
+    signal_type,
+    timeframe: '15m',
+    ideal_entry: parseFloat(ideal_entry.toFixed(symbol.includes('USDT') ? 5 : 8)),
+    take_profit: parseFloat(take_profit.toFixed(symbol.includes('USDT') ? 5 : 8)),
+    stop_loss: parseFloat(stop_loss.toFixed(symbol.includes('USDT') ? 5 : 8)),
+    reliability_score: Math.floor(Math.random() * 4) + 7,
+    entry_time: new Date().toISOString(),
+    status: 'ACTIVE'
+  };
+}
+
 export default function handler(req, res) {
+  // %25 şans ile yeni kripto sinyali
+  if (Math.random() < 0.25) {
+    const symbols = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'ADAUSDT', 'SOLUSDT', 'DOGEUSDT', 'MATICUSDT', 'DOTUSDT'];
+    const randomSymbol = symbols[Math.floor(Math.random() * symbols.length)];
+    
+    const existingIndex = cryptoSignalCache.findIndex(s => s.symbol === randomSymbol);
+    const newSignal = generateCryptoSignal(randomSymbol);
+    
+    if (existingIndex >= 0) {
+      cryptoSignalCache[existingIndex] = newSignal;
+    } else {
+      cryptoSignalCache.push(newSignal);
+    }
+    
+    if (cryptoSignalCache.length > 2) {
+      cryptoSignalCache = cryptoSignalCache.slice(-2);
+    }
+  }
+  
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
