@@ -1,66 +1,56 @@
 """
-Vercel Serverless için FastAPI - GERÇEK VERİLER
+Vercel Python Runtime için minimal handler
 """
 
 import json
-from typing import Optional, Dict
 import requests
 import time
+from urllib.parse import urlparse, parse_qs
 
-# Basit HTTP handler - FastAPI yerine
-def handler(event, context):
-    """Vercel serverless handler"""
+def app(environ, start_response):
+    """WSGI application"""
     
-    # Request path'i al
-    path = event.get('path', '/')
-    method = event.get('httpMethod', 'GET')
+    # Request bilgileri
+    method = environ.get('REQUEST_METHOD', 'GET')
+    path = environ.get('PATH_INFO', '/')
     
     # CORS headers
-    headers = {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Content-Type': 'application/json'
-    }
+    headers = [
+        ('Access-Control-Allow-Origin', '*'),
+        ('Access-Control-Allow-Methods', 'GET, POST, OPTIONS'),
+        ('Access-Control-Allow-Headers', 'Content-Type'),
+        ('Content-Type', 'application/json')
+    ]
     
     try:
         # Route handling
-        if path == '/':
-            response_body = {"service": "Momentum Signals API", "status": "LIVE", "version": "1.0.0"}
+        if path == '/' or path == '':
+            response_data = {"service": "Momentum Signals API", "status": "LIVE", "version": "1.0.0"}
         elif path == '/api/market/status':
-            response_body = get_market_status()
+            response_data = get_market_status()
         elif path == '/api/forex/signals':
-            response_body = get_forex_signals()
+            response_data = get_forex_signals()
         elif path == '/api/crypto/signals':
-            response_body = get_crypto_signals()
+            response_data = get_crypto_signals()
         elif path == '/api/crypto-prices':
-            response_body = get_crypto_prices()
+            response_data = get_crypto_prices()
         elif path == '/api/trade-statistics':
-            response_body = get_trade_statistics()
+            response_data = get_trade_statistics()
         else:
-            response_body = {"error": "Not found"}
-            return {
-                'statusCode': 404,
-                'headers': headers,
-                'body': json.dumps(response_body)
-            }
+            response_data = {"error": "Not found", "path": path}
+            start_response('404 Not Found', headers)
+            return [json.dumps(response_data).encode('utf-8')]
         
-        return {
-            'statusCode': 200,
-            'headers': headers,
-            'body': json.dumps(response_body)
-        }
+        start_response('200 OK', headers)
+        return [json.dumps(response_data).encode('utf-8')]
         
     except Exception as e:
-        error_response = {"error": str(e), "status": "error"}
-        return {
-            'statusCode': 500,
-            'headers': headers,
-            'body': json.dumps(error_response)
-        }
+        error_data = {"error": str(e), "status": "error", "path": path}
+        start_response('500 Internal Server Error', headers)
+        return [json.dumps(error_data).encode('utf-8')]
 
-# GERÇEK API Providers (minimal)
-def get_forex_price(symbol: str) -> Optional[float]:
+# API Functions
+def get_forex_price(symbol):
     try:
         if symbol == 'EUR/USD':
             response = requests.get("https://api.exchangerate-api.com/v4/latest/EUR", timeout=3)
@@ -73,11 +63,10 @@ def get_forex_price(symbol: str) -> Optional[float]:
     except:
         pass
     
-    # Fallback prices
     fallback = {'EUR/USD': 1.0945, 'GBP/USD': 1.2734, 'USD/JPY': 154.82}
     return fallback.get(symbol)
 
-def get_crypto_price(symbol: str) -> Optional[float]:
+def get_crypto_price(symbol):
     try:
         symbol_clean = symbol.replace('/', '') + 'T'
         if symbol_clean.endswith('USDT'):
@@ -88,22 +77,19 @@ def get_crypto_price(symbol: str) -> Optional[float]:
     except:
         pass
     
-    # Fallback prices
     fallback = {'BTC/USD': 107420.50, 'ETH/USD': 3945.21, 'SOL/USD': 158.96}
     return fallback.get(symbol)
 
-def analyze_signal(symbol: str, price: float) -> Optional[Dict]:
-    """Basit KRO analizi"""
+def analyze_signal(symbol, price):
     try:
-        # Trend factor
         trend = (price % 100) / 100
         
-        if trend > 0.6:  # Bullish
+        if trend > 0.6:
             entry = price * 1.002
             stop_loss = price * 0.985
             take_profit = price * 1.025
             signal_type = "BUY"
-        elif trend < 0.4:  # Bearish
+        elif trend < 0.4:
             entry = price * 0.998
             stop_loss = price * 1.015
             take_profit = price * 0.975
@@ -111,12 +97,11 @@ def analyze_signal(symbol: str, price: float) -> Optional[Dict]:
         else:
             return None
         
-        # Risk/Reward check
         risk = abs(entry - stop_loss)
         reward = abs(take_profit - entry)
         rr = round(reward / risk, 2) if risk > 0 else 1.0
         
-        if rr < 1.5:  # 1.5+ RR kontrolü
+        if rr < 1.5:
             return None
         
         return {
@@ -134,7 +119,6 @@ def analyze_signal(symbol: str, price: float) -> Optional[Dict]:
     except:
         return None
 
-# API Functions
 def get_forex_signals():
     signals = []
     symbols = ['EUR/USD', 'GBP/USD', 'USD/JPY']
