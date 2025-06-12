@@ -2,12 +2,8 @@
   "version": 2,
   "builds": [
     {
-      "src": "frontend/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "build",
-        "outputDirectory": "frontend/build"
-      }
+      "src": "frontend/build/**",
+      "use": "@vercel/static"
     },
     {
       "src": "backend/vercel_app.py",
@@ -20,11 +16,13 @@
       "dest": "/backend/vercel_app.py"
     },
     {
+      "src": "/static/(.*)",
+      "dest": "/frontend/build/static/$1"
+    },
+    {
       "src": "/(.*)",
       "dest": "/frontend/build/index.html"
     }
   ],
-  "env": {
-    "NODE_ENV": "production"
-  }
+  "outputDirectory": "frontend/build"
 } 
