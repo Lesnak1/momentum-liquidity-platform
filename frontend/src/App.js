@@ -53,15 +53,15 @@ function App() {
     try {
       // Backend'den gerçek forex verilerini yükle
       const apiBase = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8000';
-      const forexResponse = await fetch(`${apiBase}/market-data`);
+      const forexResponse = await fetch(`${apiBase}/api/market/status`);
       const forexData = await forexResponse.json();
       
       // Forex verilerini initialize et
-      if (forexData.forex) {
+      if (forexData.market_data && forexData.market_data.forex) {
         const initialForexData = {};
-        Object.entries(forexData.forex).forEach(([symbol, priceInfo]) => {
+        Object.entries(forexData.market_data.forex).forEach(([symbol, price]) => {
           initialForexData[symbol] = {
-            currentPrice: priceInfo.price,
+            currentPrice: price,
             signal: null,
             pastTrades: []
           };
@@ -88,21 +88,21 @@ function App() {
   const updatePrices = async () => {
     try {
       const apiBase = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8000';
-      const pricesResponse = await fetch(`${apiBase}/market-data`);
+      const pricesResponse = await fetch(`${apiBase}/api/market/status`);
       const pricesData = await pricesResponse.json();
       
       setTradingData(prev => {
         const newData = { ...prev };
         
         // Backend\'den gelen fiyatları güncelle
-        if (pricesData && pricesData.forex) {
-          Object.entries(pricesData.forex).forEach(([symbol, priceInfo]) => {
+        if (pricesData && pricesData.market_data && pricesData.market_data.forex) {
+          Object.entries(pricesData.market_data.forex).forEach(([symbol, price]) => {
             if (newData[symbol]) {
-              newData[symbol].currentPrice = priceInfo.price;
+              newData[symbol].currentPrice = price;
             } else {
               // Yeni symbol ekle
               newData[symbol] = {
-                currentPrice: priceInfo.price,
+                currentPrice: price,
                 signal: null,
                 pastTrades: []
               };
@@ -116,12 +116,10 @@ function App() {
       setLastUpdate(new Date().toLocaleTimeString('tr-TR'));
       
       // API durumunu güncelle
-      if (pricesData.api_status === 'live') {
+      if (pricesData.status === 'success') {
         setConnectionStatus('canlı');
-      } else if (pricesData.api_status === 'cached') {
-        setConnectionStatus('cached');
       } else {
-        setConnectionStatus('simüle');
+        setConnectionStatus('hata');
       }
       
     } catch (error) {
@@ -134,11 +132,11 @@ function App() {
     try {
       const apiBase = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8000';
       // Forex sinyallerini çek
-      const forexResponse = await fetch(`${apiBase}/forex-signals`);
+      const forexResponse = await fetch(`${apiBase}/api/forex/signals`);
       const forexSignalsData = await forexResponse.json();
       
       // Kripto sinyallerini çek
-      const cryptoResponse = await fetch(`${apiBase}/crypto-signals`);
+      const cryptoResponse = await fetch(`${apiBase}/api/crypto/signals`);
       const cryptoSignalsData = await cryptoResponse.json();
       
       // State'leri güncelle
