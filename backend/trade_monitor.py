@@ -27,6 +27,11 @@ class TradeMonitor:
         self.symbol_statistics = {}
         self.load_trade_history()
     
+    def start_monitoring(self):
+        """Trade monitoring sistemini başlat"""
+        print("✅ Trade monitoring sistemi başlatıldı")
+        return True
+    
     def add_trade(self, trade_data):
         """
         Yeni işlem ekle

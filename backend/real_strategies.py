@@ -207,8 +207,40 @@ class RealTechnicalAnalysis:
         
         if len(true_ranges) >= period:
             return sum(true_ranges[-period:]) / period
+        else:
+            return sum(true_ranges) / len(true_ranges) if true_ranges else 0.01
+    
+    @staticmethod
+    def calculate_rsi(prices: List[float], period: int = 14) -> float:
+        """RSI hesaplama - Gerçek fiyat listesinden"""
+        if len(prices) < period + 1:
+            return 50.0  # Neutral RSI
         
-        return sum(true_ranges) / len(true_ranges) if true_ranges else 0.01
+        # Fiyat değişimlerini hesapla
+        deltas = []
+        for i in range(1, len(prices)):
+            deltas.append(prices[i] - prices[i-1])
+        
+        # Gains ve losses ayır
+        gains = [delta if delta > 0 else 0 for delta in deltas]
+        losses = [-delta if delta < 0 else 0 for delta in deltas]
+        
+        # İlk ortalama
+        if len(gains) >= period:
+            avg_gain = sum(gains[-period:]) / period
+            avg_loss = sum(losses[-period:]) / period
+        else:
+            avg_gain = sum(gains) / len(gains) if gains else 0
+            avg_loss = sum(losses) / len(losses) if losses else 0
+        
+        # RSI hesapla
+        if avg_loss == 0:
+            return 100.0  # Hiç loss yok
+        
+        rs = avg_gain / avg_loss
+        rsi = 100 - (100 / (1 + rs))
+        
+        return round(rsi, 2)
 
 class KROStrategy:
     """
@@ -372,120 +404,165 @@ class KROStrategy:
 
 class LMOStrategy:
     """
-    LMO Stratejisi: Liquidity Sweep + Candle Onayı
+    LMO Stratejisi: Liquidity Sweep + Candle Onayı - 4H TIMEFRAME
     Gerçek mum verilerinden tam implementasyon
     """
     
     def __init__(self, data_provider):
         self.name = "LMO"
-        self.description = "Liquidity Sweep + Candle Onayı (Gerçek Veriler)"
+        self.description = "Liquidity Sweep + Candle Onayı (4H Gerçek Veriler)"
         self.data_provider = data_provider
         self.min_reliability = 6
     
     def analyze(self, symbol: str, current_price: float) -> Optional[Dict]:
-        """LMO stratejisi tam analizi"""
+        """4H timeframe ile LMO stratejisi tam analizi"""
         try:
-            # Geçmiş mum verilerini al
-            candles = self.data_provider.get_historical_data(symbol, '15m', 100)
+            # 4H geçmiş mum verilerini al - LMO için ideal timeframe
+            candles_4h = self.data_provider.get_historical_data(symbol, '4h', 100)
             
-            if len(candles) < 50:
+            # 15M verileri al - entry timing için
+            candles_15m = self.data_provider.get_historical_data(symbol, '15m', 50)
+            
+            if len(candles_4h) < 50 or len(candles_15m) < 20:
                 return None
             
-            # ADIM 1: Liquidity sweep tespiti
-            sweep = RealTechnicalAnalysis.detect_liquidity_sweep(candles, current_price)
+            # ADIM 1: 4H Liquidity sweep tespiti
+            sweep = RealTechnicalAnalysis.detect_liquidity_sweep(candles_4h, current_price)
             
             if not sweep['sweep_detected']:
                 return None
             
-            # ADIM 2: Candle pattern onayı
-            candle_confirm = RealTechnicalAnalysis.confirm_candle_pattern(candles)
+            # ADIM 2: 15M Candle pattern onayı
+            candle_confirm = RealTechnicalAnalysis.confirm_candle_pattern(candles_15m)
             
-            # ADIM 3: Support/Resistance analizi
-            sr_levels = RealTechnicalAnalysis.find_support_resistance(candles)
+            # ADIM 3: 4H Support/Resistance analizi
+            sr_levels_4h = RealTechnicalAnalysis.find_support_resistance(candles_4h)
             
-            # ADIM 4: Güvenilirlik skoru hesaplama
+            # ADIM 4: Multi-timeframe analiz
+            # 4H için teknik indikatörler
+            prices_4h = [float(candle['close']) for candle in candles_4h]
+            atr_4h = RealTechnicalAnalysis.calculate_atr(candles_4h)
+            rsi_4h = RealTechnicalAnalysis.calculate_rsi(prices_4h)
+            
+            # 15M için momentum kontrolü
+            prices_15m = [float(candle['close']) for candle in candles_15m]
+            rsi_15m = RealTechnicalAnalysis.calculate_rsi(prices_15m)
+            
+            # ADIM 5: Güvenilirlik skoru hesaplama
             reliability_score = 0
+            signal_type = None
             analysis_details = []
             
-            # Sweep gücü
+            # 4H Sweep gücü
             reliability_score += min(sweep['liquidity_strength'], 3)
-            analysis_details.append(f"Liquidity sweep: {sweep['sweep_type']}")
+            analysis_details.append(f"4H Liquidity sweep: {sweep['sweep_type']}")
             
-            # Candle pattern onayı
+            # 15M Candle pattern onayı
             if candle_confirm['confirmed']:
                 reliability_score += 3
-                analysis_details.append(f"Candle onay: {candle_confirm['pattern']}")
+                analysis_details.append(f"15M Candle onay: {candle_confirm['pattern']}")
             
-            # Volume analizi
-            if len(candles) >= 20:
-                recent_volumes = [c['volume'] for c in candles[-20:]]
+            # 4H RSI kontrolü
+            if 30 <= rsi_4h <= 70:  # Aşırı durumlar dışında
+                reliability_score += 2
+                analysis_details.append(f"4H RSI dengeli: {rsi_4h}")
+            elif (rsi_4h > 70 and sweep['sweep_type'] == 'HIGH_SWEEP') or (rsi_4h < 30 and sweep['sweep_type'] == 'LOW_SWEEP'):
+                reliability_score += 1  # Divergence durumu
+                analysis_details.append(f"4H RSI divergence: {rsi_4h}")
+            
+            # 15M Momentum konfirmasyonu
+            if len(prices_15m) >= 10:
+                momentum_15m = (prices_15m[-1] - prices_15m[-10]) / prices_15m[-10]
+                
+                if sweep['sweep_type'] == 'HIGH_SWEEP' and momentum_15m < -0.001:  # Reversal momentum
+                    reliability_score += 2
+                    signal_type = "SELL"
+                    analysis_details.append(f"15M reversal momentum: {momentum_15m*100:.2f}%")
+                    
+                elif sweep['sweep_type'] == 'LOW_SWEEP' and momentum_15m > 0.001:  # Reversal momentum
+                    reliability_score += 2
+                    signal_type = "BUY"
+                    analysis_details.append(f"15M reversal momentum: {momentum_15m*100:.2f}%")
+            
+            # 15M RSI konfirmasyonu
+            if signal_type == "SELL" and rsi_15m > 60:
+                reliability_score += 1
+                analysis_details.append(f"15M RSI sell konfirm: {rsi_15m}")
+            elif signal_type == "BUY" and rsi_15m < 40:
+                reliability_score += 1
+                analysis_details.append(f"15M RSI buy konfirm: {rsi_15m}")
+            
+            # 4H Volume analizi
+            if len(candles_4h) >= 20:
+                recent_volumes = [c['volume'] for c in candles_4h[-20:]]
                 avg_volume = sum(recent_volumes) / len(recent_volumes)
-                current_volume = candles[-1]['volume']
+                current_volume = candles_4h[-1]['volume']
                 
                 if current_volume > avg_volume * 1.15:
                     reliability_score += 2
-                    analysis_details.append(f"Volume onay: {current_volume/avg_volume:.1f}x")
+                    analysis_details.append(f"4H Volume onay: {current_volume/avg_volume:.1f}x")
             
-            # Market structure onayı
-            if len(candles) >= 30:
-                trend_candles = candles[-30:]
+            # 4H Market structure onayı
+            if len(candles_4h) >= 30:
+                trend_candles = candles_4h[-30:]
                 trend_direction = (trend_candles[-1]['close'] - trend_candles[0]['close']) / trend_candles[0]['close']
                 
-                if abs(trend_direction) > 0.01:  # %1'den fazla trend
-                    reliability_score += 1
-                    analysis_details.append(f"Trend onay: {trend_direction*100:.1f}%")
+                if signal_type == "BUY" and trend_direction < -0.01:  # Düşüş trendinde buy
+                    reliability_score += 2
+                    analysis_details.append("4H trend karşıtı giriş")
+                elif signal_type == "SELL" and trend_direction > 0.01:  # Yükseliş trendinde sell
+                    reliability_score += 2
+                    analysis_details.append("4H trend karşıtı giriş")
             
             if reliability_score < self.min_reliability:
                 return None
             
-            # ADIM 5: Sinyal yönü belirleme
-            signal_type = None
+            # ADIM 6: Sinyal yönü final kontrolü
             swept_level = sweep['swept_level']
             
-            if sweep['sweep_type'] == 'HIGH_SWEEP':
-                # Yüksek seviyeleri süpürdü, reversal bekleniyor
-                if candle_confirm.get('pattern') == 'BEARISH' or not candle_confirm['confirmed']:
-                    signal_type = "SELL"
-            
-            elif sweep['sweep_type'] == 'LOW_SWEEP':
-                # Düşük seviyeleri süpürdü, reversal bekleniyor
-                if candle_confirm.get('pattern') == 'BULLISH' or not candle_confirm['confirmed']:
-                    signal_type = "BUY"
+            if not signal_type:
+                # Fallback sinyal yönü belirleme
+                if sweep['sweep_type'] == 'HIGH_SWEEP':
+                    if candle_confirm.get('pattern') == 'BEARISH' or not candle_confirm['confirmed']:
+                        signal_type = "SELL"
+                elif sweep['sweep_type'] == 'LOW_SWEEP':
+                    if candle_confirm.get('pattern') == 'BULLISH' or not candle_confirm['confirmed']:
+                        signal_type = "BUY"
             
             if not signal_type:
                 return None
             
-            # ADIM 6: TP/SL hesaplama
-            atr = RealTechnicalAnalysis.calculate_atr(candles)
+            # ADIM 7: 4H TP/SL hesaplama (geniş hedefler)
+            atr_multiplier = 3.0  # 4H için çok daha geniş
             
             if signal_type == "BUY":
-                # Giriş: Sweep seviyesinin üzerinde onay
-                ideal_entry = max(current_price, swept_level * 1.002)
+                # Giriş: 15M momentum onayı ile
+                ideal_entry = current_price
                 
-                # Stop Loss: Sweep seviyesinin altında
+                # Stop Loss: 4H Sweep seviyesinin altında
                 stop_loss = swept_level * 0.996
                 
-                # Take Profit: ATR'nin 1.5 katı veya next resistance
-                take_profit = ideal_entry + (atr * 1.5)
+                # Take Profit: 4H ATR'nin 2 katı veya next resistance
+                take_profit = ideal_entry + (atr_4h * atr_multiplier)
                 
                 # Next resistance kontrolü
-                for r in sr_levels.get('resistance_levels', []):
+                for r in sr_levels_4h.get('resistance_levels', []):
                     if r['level'] > current_price:
                         take_profit = min(take_profit, r['level'] * 0.998)
                         break
             
             else:  # SELL
-                # Giriş: Sweep seviyesinin altında onay
-                ideal_entry = min(current_price, swept_level * 0.998)
+                # Giriş: 15M momentum onayı ile
+                ideal_entry = current_price
                 
-                # Stop Loss: Sweep seviyesinin üzerinde
+                # Stop Loss: 4H Sweep seviyesinin üzerinde
                 stop_loss = swept_level * 1.004
                 
-                # Take Profit: ATR'nin 1.5 katı veya next support
-                take_profit = ideal_entry - (atr * 1.5)
+                # Take Profit: 4H ATR'nin 2 katı veya next support
+                take_profit = ideal_entry - (atr_4h * atr_multiplier)
                 
                 # Next support kontrolü
-                for s in sr_levels.get('support_levels', []):
+                for s in sr_levels_4h.get('support_levels', []):
                     if s['level'] < current_price:
                         take_profit = max(take_profit, s['level'] * 1.002)
                         break
@@ -495,13 +572,13 @@ class LMOStrategy:
             reward = abs(take_profit - ideal_entry)
             risk_reward = round(reward / risk, 2) if risk > 0 else 1.0
             
-            # KRİTİK: Minimum 1.5 RR kontrolü - ASLA daha düşük RR kabul etme!
+            # KRİTİK: Minimum 1.5 RR kontrolü - 4H için daha yüksek standart!
             if risk_reward < 1.5:
-                print(f"❌ {symbol} LMO sinyali reddedildi: RR {risk_reward} < 1.5 (Minimum RR standardı)")
+                print(f"❌ {symbol} 4H LMO sinyali reddedildi: RR {risk_reward} < 1.5 (Minimum RR standardı)")
                 return None
             
             return {
-                'id': f"LMO_{symbol}_{int(time.time())}",
+                'id': f"LMO_4H_{symbol}_{int(time.time())}",
                 'symbol': symbol,
                 'strategy': 'LMO',
                 'signal_type': signal_type,
@@ -510,17 +587,19 @@ class LMOStrategy:
                 'stop_loss': round(stop_loss, 5),
                 'take_profit': round(take_profit, 5),
                 'reliability_score': min(reliability_score, 10),
-                'timeframe': '15m',
+                'timeframe': '4H+15M',  # Multi-timeframe
                 'status': 'NEW',
-                'analysis': f"LMO: {', '.join(analysis_details)}",
+                'analysis': f"4H LMO: {', '.join(analysis_details)}",
                 'risk_reward': risk_reward,
                 'swept_level': swept_level,
                 'sweep_type': sweep['sweep_type'],
-                'atr': round(atr, 6)
+                'atr_4h': round(atr_4h, 6),
+                'rsi_4h': round(rsi_4h, 1),
+                'rsi_15m': round(rsi_15m, 1)
             }
             
         except Exception as e:
-            print(f"❌ LMO analiz hatası {symbol}: {e}")
+            print(f"❌ 4H LMO analiz hatası {symbol}: {e}")
             return None
 
 class RealStrategyManager:
@@ -639,7 +718,7 @@ class RealStrategyManager:
                 'ideal_entry': round(combined_entry, 5),
                 'stop_loss': round(combined_sl, 5),
                 'take_profit': round(combined_tp, 5),
-                'reliability_score': round(combined_reliability, 1),
+                'reliability_score': int(round(combined_reliability)),
                 'timeframe': '15m',
                 'status': 'NEW',
                 'analysis': combined_analysis,

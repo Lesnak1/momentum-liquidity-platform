@@ -18,6 +18,7 @@ try:
     from crypto_strategies import get_crypto_strategy_manager
     from real_strategies import get_real_strategy_manager  # YENİ GERÇEK STRATEJİLER
     from trade_monitor import get_trade_monitor
+    from lot_calculator import get_ftmo_calculator  # FTMO LOT SIZE CALCULATOR
     print("✅ Tüm modüller başarıyla yüklendi")
 except ImportError as e:
     print(f"❌ Modül yükleme hatası: {e}")
@@ -27,6 +28,7 @@ except ImportError as e:
     get_crypto_strategy_manager = None
     get_real_strategy_manager = None
     get_trade_monitor = None
+    get_ftmo_calculator = None
 
 # KRİTİK: SABIT SİNYAL CACHE SİSTEMİ
 ACTIVE_SIGNALS_CACHE = {}
@@ -66,6 +68,12 @@ class TradingSignalHandler(BaseHTTPRequestHandler):
                 print("✅ Trade monitor aktif")
             else:
                 self.trade_monitor = None
+                
+            if get_ftmo_calculator:
+                self.ftmo_calculator = get_ftmo_calculator()
+                print("✅ FTMO lot calculator aktif")
+            else:
+                self.ftmo_calculator = None
         
         except Exception as e:
             print(f"❌ Provider başlatma hatası: {e}")
@@ -74,6 +82,7 @@ class TradingSignalHandler(BaseHTTPRequestHandler):
             self.crypto_strategies = None
             self.forex_strategies = None
             self.trade_monitor = None
+            self.ftmo_calculator = None
         
         super().__init__(*args, **kwargs)
     
@@ -152,11 +161,12 @@ class TradingSignalHandler(BaseHTTPRequestHandler):
                     for symbol, price_data in crypto_prices.items():
                         current_price = price_data['price']
                         
-                        # %30 şans ile bu symbol için sinyal üret
-                        if random.random() < 0.3:
-                            symbol_signals = self.crypto_strategies.analyze_symbol(symbol, current_price)
-                            
-                            for signal in symbol_signals:
+                        # HER SYMBOL'Ü ANALİZ ET - RASTGELE ŞANS YOK
+                        symbol_signals = self.crypto_strategies.analyze_symbol(symbol, current_price)
+                        
+                        for signal in symbol_signals:
+                            # Sadece güvenilirlik >= 4 olan sinyalleri al
+                            if signal.get('reliability_score', 0) >= 4:
                                 signal_id = f"CRYPTO_{symbol}_{int(current_time)}"
                                 signal['signal_id'] = signal_id
                                 signal['asset_type'] = 'crypto'
@@ -172,6 +182,23 @@ class TradingSignalHandler(BaseHTTPRequestHandler):
                                 signal['fixed_signal_type'] = signal['signal_type']
                                 signal['fixed_reliability'] = signal['reliability_score']
                                 
+                                # FTMO LOT SIZE HESAPLAMA - 10K HESAP İÇİN
+                                if self.ftmo_calculator:
+                                    lot_calc = self.ftmo_calculator.calculate_position_size_for_signal(signal)
+                                    signal['ftmo_lot_size'] = lot_calc.get('lot_size', 0.01)
+                                    signal['ftmo_risk_amount'] = lot_calc.get('risk_amount_used', 100)
+                                    signal['ftmo_risk_percentage'] = lot_calc.get('risk_percentage', 1.0)
+                                    signal['ftmo_recommendation'] = lot_calc.get('recommendation', 'Hesaplanamadı')
+                                    signal['ftmo_compliant'] = lot_calc.get('ftmo_compliant', False)
+                                    signal['pip_distance'] = lot_calc.get('pip_distance', 0)
+                                    signal['potential_loss'] = lot_calc.get('potential_loss', 0)
+                                else:
+                                    signal['ftmo_lot_size'] = 0.01  # Default minimum
+                                    signal['ftmo_risk_amount'] = 100
+                                    signal['ftmo_risk_percentage'] = 1.0
+                                    signal['ftmo_recommendation'] = '⚠️ Calculator yüklenemedi'
+                                    signal['ftmo_compliant'] = False
+                                
                                 new_signals[signal_id] = signal
                                 
             except Exception as e:
@@ -185,11 +212,12 @@ class TradingSignalHandler(BaseHTTPRequestHandler):
                     for symbol, price_data in forex_prices.items():
                         current_price = price_data['price']
                         
-                        # %25 şans ile bu symbol için sinyal üret
-                        if random.random() < 0.25:
-                            symbol_signals = self.forex_strategies.analyze_symbol(symbol, current_price)
-                            
-                            for signal in symbol_signals:
+                        # HER SYMBOL'Ü ANALİZ ET - RASTGELE ŞANS YOK
+                        symbol_signals = self.forex_strategies.analyze_symbol(symbol, current_price)
+                        
+                        for signal in symbol_signals:
+                            # Sadece güvenilirlik >= 4 olan sinyalleri al
+                            if signal.get('reliability_score', 0) >= 4:
                                 signal_id = f"FOREX_{symbol}_{int(current_time)}"
                                 signal['signal_id'] = signal_id
                                 signal['asset_type'] = 'forex'
@@ -204,6 +232,23 @@ class TradingSignalHandler(BaseHTTPRequestHandler):
                                 signal['fixed_strategy'] = signal['strategy']
                                 signal['fixed_signal_type'] = signal['signal_type']
                                 signal['fixed_reliability'] = signal['reliability_score']
+                                
+                                # FTMO LOT SIZE HESAPLAMA - 10K HESAP İÇİN
+                                if self.ftmo_calculator:
+                                    lot_calc = self.ftmo_calculator.calculate_position_size_for_signal(signal)
+                                    signal['ftmo_lot_size'] = lot_calc.get('lot_size', 0.01)
+                                    signal['ftmo_risk_amount'] = lot_calc.get('risk_amount_used', 100)
+                                    signal['ftmo_risk_percentage'] = lot_calc.get('risk_percentage', 1.0)
+                                    signal['ftmo_recommendation'] = lot_calc.get('recommendation', 'Hesaplanamadı')
+                                    signal['ftmo_compliant'] = lot_calc.get('ftmo_compliant', False)
+                                    signal['pip_distance'] = lot_calc.get('pip_distance', 0)
+                                    signal['potential_loss'] = lot_calc.get('potential_loss', 0)
+                                else:
+                                    signal['ftmo_lot_size'] = 0.01  # Default minimum
+                                    signal['ftmo_risk_amount'] = 100
+                                    signal['ftmo_risk_percentage'] = 1.0
+                                    signal['ftmo_recommendation'] = '⚠️ Calculator yüklenemedi'
+                                    signal['ftmo_compliant'] = False
                                 
                                 new_signals[signal_id] = signal
                                 

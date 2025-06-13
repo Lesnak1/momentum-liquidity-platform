@@ -105,6 +105,14 @@ class ForexDataProvider:
                         'source': 'fallback'
                     }
                     
+                else:
+                    print(f"⚠️ ExchangeRate API hatası: Status {response.status_code}")
+                    if response.status_code == 429:
+                        print("⚠️ API limit aşıldı, fallback kullanılıyor")
+                    elif response.status_code == 403:
+                        print("⚠️ API erişimi reddedildi, fallback kullanılıyor")
+                    forex_data = self._get_fallback_forex()
+            
             # urllib fallback
             elif URLLIB_AVAILABLE:
                 url = f"{self.apis['exchangerate']}/USD"

@@ -7,6 +7,12 @@ import time
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple
 import random
+try:
+    from advanced_momentum_analysis import EnhancedLMOAnalyzer, AdvancedMomentumAnalyzer, RSIDivergenceDetector
+    ENHANCED_ANALYSIS_AVAILABLE = True
+except ImportError:
+    ENHANCED_ANALYSIS_AVAILABLE = False
+    print("⚠️ Enhanced analysis modülü bulunamadı, standart forex analiz kullanılacak")
 
 class TechnicalIndicators:
     """Teknik analiz indikatörleri"""
@@ -212,15 +218,15 @@ class RealForexKROStrategy:
             if not signal_type or reliability_score < self.min_reliability:
                 return None
             
-            # TP/SL Hesaplama (ATR bazlı)
-            atr_multiplier = 1.5
+            # TP/SL Hesaplama (ATR bazlı) - Forex için optimize
+            atr_multiplier = 3.0  # Daha geniş forex risk yönetimi
             
             if signal_type == "BUY":
                 stop_loss = current_price - (atr * atr_multiplier)
-                take_profit = current_price + (atr * atr_multiplier * 1.5)  # 1.5:1 RR
+                take_profit = current_price + (atr * atr_multiplier * 2.5)  # 2.5:1 RR hedefi
             else:
                 stop_loss = current_price + (atr * atr_multiplier)
-                take_profit = current_price - (atr * atr_multiplier * 1.5)
+                take_profit = current_price - (atr * atr_multiplier * 2.5)  # 2.5:1 RR hedefi
             
             # Risk/Reward hesapla
             risk = abs(current_price - stop_loss)
@@ -248,108 +254,156 @@ class RealForexKROStrategy:
             return None
 
 class RealForexLMOStrategy:
-    """Gerçek verilerle LMO Stratejisi"""
+    """Gerçek verilerle LMO Stratejisi - 4H TIMEFRAME"""
     
     def __init__(self, forex_provider):
         self.name = "Real-LMO"
-        self.description = "Gerçek Forex Verilerle LMO Stratejisi"
+        self.description = "Gerçek Forex Verilerle LMO Stratejisi (4H)"
         self.min_reliability = 6
         self.forex_provider = forex_provider
     
     def analyze(self, symbol: str, current_price: float) -> Optional[Dict]:
-        """Gerçek verilerle LMO stratejisi analizi"""
+        """4H timeframe ile gerçek LMO stratejisi analizi"""
         try:
-            # Geçmiş verileri al
-            candles = self.forex_provider.get_historical_data(symbol, '15m', 100)
+            # 4H verileri al - LMO için ideal timeframe
+            candles_4h = self.forex_provider.get_historical_data(symbol, '4h', 100)
             
-            if len(candles) < 50:
+            # 15m verileri al - entry timing için
+            candles_15m = self.forex_provider.get_historical_data(symbol, '15m', 50)
+            
+            if len(candles_4h) < 50 or len(candles_15m) < 20:
                 return None
             
-            prices = [float(candle['close']) for candle in candles]
-            highs = [float(candle['high']) for candle in candles]
-            lows = [float(candle['low']) for candle in candles]
+            # 4H analiz - Ana trend ve liquidity seviyeleri
+            prices_4h = [float(candle['close']) for candle in candles_4h]
+            highs_4h = [float(candle['high']) for candle in candles_4h]
+            lows_4h = [float(candle['low']) for candle in candles_4h]
             
-            # Teknik analiz
-            rsi = TechnicalIndicators.rsi(prices)
-            sr_levels = TechnicalIndicators.support_resistance_levels(prices)
-            atr = TechnicalIndicators.calculate_atr(candles)
+            # 15M analiz - Entry timing
+            prices_15m = [float(candle['close']) for candle in candles_15m]
             
-            # LMO Liquidity Sweep Analizi
+            # 4H Teknik analiz
+            rsi_4h = TechnicalIndicators.rsi(prices_4h)
+            sr_levels_4h = TechnicalIndicators.support_resistance_levels(prices_4h)
+            atr_4h = TechnicalIndicators.calculate_atr(candles_4h)
+            
+            # 15M Teknik analiz - Momentum konfirmasyonu
+            rsi_15m = TechnicalIndicators.rsi(prices_15m)
+            
+            # LMO 4H Liquidity Sweep Analizi
             reliability_score = 0
             signal_type = None
             analysis_details = []
             
-            # 1. Liquidity Sweep Tespiti
-            recent_highs = highs[-20:]
-            recent_lows = lows[-20:]
-            max_high = max(recent_highs)
-            min_low = min(recent_lows)
+            # 1. 4H Liquidity Sweep Tespiti
+            recent_highs_4h = highs_4h[-20:]  # Son 20 x 4h = 80 saat geçmiş
+            recent_lows_4h = lows_4h[-20:]
+            max_high_4h = max(recent_highs_4h)
+            min_low_4h = min(recent_lows_4h)
             
-            # Sweep kontrolü
-            if len(prices) >= 10:
-                if current_price > max_high * 0.999:  # Yüksek seviye sweep
-                    if rsi > 60:  # Aşırı alım bölgesi
-                        reliability_score += 3
-                        signal_type = "SELL"
-                        analysis_details.append(f"High sweep + RSI: {rsi}")
-                
-                if current_price < min_low * 1.001:  # Düşük seviye sweep
-                    if rsi < 40:  # Aşırı satım bölgesi
-                        reliability_score += 3
-                        signal_type = "BUY"
-                        analysis_details.append(f"Low sweep + RSI: {rsi}")
+            # Liquidity sweep kontrolü (4H zaman diliminde)
+            liquidity_swept = False
+            sweep_direction = None
             
-            # 2. Candle Pattern Confirmation
-            if len(candles) >= 3:
-                last_3_candles = candles[-3:]
+            if current_price > max_high_4h * 1.001:  # Yüksek seviyeler temizlendi
+                liquidity_swept = True
+                sweep_direction = "HIGH_SWEEP"
+                reliability_score += 3
+                analysis_details.append(f"4H High sweep: {max_high_4h}")
                 
-                # Reversal pattern check
-                for i, candle in enumerate(last_3_candles):
-                    body_size = abs(candle['close'] - candle['open'])
-                    full_range = candle['high'] - candle['low']
+            elif current_price < min_low_4h * 0.999:  # Düşük seviyeler temizlendi
+                liquidity_swept = True
+                sweep_direction = "LOW_SWEEP"
+                reliability_score += 3
+                analysis_details.append(f"4H Low sweep: {min_low_4h}")
+            
+            if not liquidity_swept:
+                return None
+            
+            # 2. 4H RSI Kontrolü
+            if 30 <= rsi_4h <= 70:  # Aşırı durumlar dışında
+                reliability_score += 2
+                analysis_details.append(f"4H RSI dengeli: {rsi_4h}")
+            elif (rsi_4h > 70 and sweep_direction == "HIGH_SWEEP") or (rsi_4h < 30 and sweep_direction == "LOW_SWEEP"):
+                reliability_score += 1  # Divergence durumu
+                analysis_details.append(f"4H RSI divergence: {rsi_4h}")
+            
+            # 3. 15M Momentum Konfirmasyonu
+            if len(prices_15m) >= 10:
+                momentum_15m = (prices_15m[-1] - prices_15m[-10]) / prices_15m[-10]
+                
+                if sweep_direction == "HIGH_SWEEP" and momentum_15m < -0.001:  # Reversal momentum
+                    reliability_score += 2
+                    signal_type = "SELL"
+                    analysis_details.append(f"15M reversal momentum: {momentum_15m*100:.2f}%")
                     
-                    if body_size > full_range * 0.6:  # Strong body
-                        reliability_score += 1
-                        analysis_details.append(f"Güçlü mum {i+1}")
+                elif sweep_direction == "LOW_SWEEP" and momentum_15m > 0.001:  # Reversal momentum
+                    reliability_score += 2
+                    signal_type = "BUY"
+                    analysis_details.append(f"15M reversal momentum: {momentum_15m*100:.2f}%")
             
-            # 3. Volume Confirmation
-            volumes = [candle['volume'] for candle in candles[-20:]]
-            avg_volume = sum(volumes) / len(volumes)
-            recent_volume = candles[-1]['volume']
-            
-            if recent_volume > avg_volume * 1.2:
+            # 4. 15M RSI Konfirmasyonu
+            if signal_type == "SELL" and rsi_15m > 60:  # Satış için yüksek RSI
                 reliability_score += 1
-                analysis_details.append(f"Volume onay: {recent_volume/avg_volume:.1f}x")
+                analysis_details.append(f"15M RSI sell konfirm: {rsi_15m}")
+            elif signal_type == "BUY" and rsi_15m < 40:  # Alış için düşük RSI
+                reliability_score += 1
+                analysis_details.append(f"15M RSI buy konfirm: {rsi_15m}")
             
-            # 4. Market Structure
-            if len(prices) >= 20:
-                recent_trend = (prices[-1] - prices[-20]) / prices[-20]
-                if signal_type == "BUY" and recent_trend < -0.005:  # Düşüş trendinde buy
+            # 5. 4H Trend Yapısı
+            if len(prices_4h) >= 20:
+                trend_4h = (prices_4h[-1] - prices_4h[-20]) / prices_4h[-20]
+                if signal_type == "BUY" and trend_4h < -0.01:  # Düşüş trendinde buy
                     reliability_score += 2
-                    analysis_details.append("Trend karşıtı girişim")
-                elif signal_type == "SELL" and recent_trend > 0.005:  # Yükseliş trendinde sell
+                    analysis_details.append("4H trend karşıtı giriş")
+                elif signal_type == "SELL" and trend_4h > 0.01:  # Yükseliş trendinde sell
                     reliability_score += 2
-                    analysis_details.append("Trend karşıtı girişim")
+                    analysis_details.append("4H trend karşıtı giriş")
             
             if not signal_type or reliability_score < self.min_reliability:
                 return None
             
-            # TP/SL Hesaplama (ATR bazlı)
-            atr_multiplier = 1.2
+            # TP/SL Hesaplama (4H ATR bazlı) - Forex için optimize
+            atr_multiplier = 2.8  # 4H LMO için daha geniş SL
             
             if signal_type == "BUY":
-                stop_loss = current_price - (atr * atr_multiplier)
-                take_profit = current_price + (atr * atr_multiplier * 1.3)
-            else:
-                stop_loss = current_price + (atr * atr_multiplier)
-                take_profit = current_price - (atr * atr_multiplier * 1.3)
+                # Giriş: 15M onay ile
+                ideal_entry = current_price
+                
+                # Stop Loss: 4H ATR ile daha geniş seviye
+                stop_loss = current_price - (atr_4h * atr_multiplier)
+                
+                # Take Profit: 4H ATR ile 3.0:1 RR (forex için)
+                take_profit = current_price + (atr_4h * atr_multiplier * 3.0)
+                
+                # 4H resistance kontrolü
+                for level in sr_levels_4h.get('resistance', []):
+                    if level > current_price:
+                        take_profit = min(take_profit, level * 0.998)
+                        break
+                        
+            else:  # SELL
+                # Giriş: 15M onay ile
+                ideal_entry = current_price
+                
+                # Stop Loss: 4H ATR ile daha geniş seviye
+                stop_loss = current_price + (atr_4h * atr_multiplier)
+                
+                # Take Profit: 4H ATR ile 3.0:1 RR (forex için)
+                take_profit = current_price - (atr_4h * atr_multiplier * 3.0)
+                
+                # 4H support kontrolü
+                for level in sr_levels_4h.get('support', []):
+                    if level < current_price:
+                        take_profit = max(take_profit, level * 1.002)
+                        break
             
-            risk = abs(current_price - stop_loss)
-            reward = abs(take_profit - current_price)
+            risk = abs(ideal_entry - stop_loss)
+            reward = abs(take_profit - ideal_entry)
             risk_reward = round(reward / risk, 2) if risk > 0 else 1.0
             
             return {
-                'id': f"REAL_LMO_{symbol}_{int(time.time())}",
+                'id': f"REAL_LMO_4H_{symbol}_{int(time.time())}",
                 'symbol': symbol,
                 'strategy': 'Real-LMO',
                 'signal_type': signal_type,
@@ -357,15 +411,18 @@ class RealForexLMOStrategy:
                 'stop_loss': round(stop_loss, 5),
                 'take_profit': round(take_profit, 5),
                 'reliability_score': min(reliability_score, 10),
-                'timeframe': '15m',
+                'timeframe': '4H+15M',  # Multi-timeframe
                 'status': 'NEW',
-                'analysis': f"LMO Analiz: {', '.join(analysis_details)}",
+                'analysis': f"4H LMO Analiz: {', '.join(analysis_details)}",
                 'risk_reward': risk_reward,
-                'atr': round(atr, 6)
+                'atr_4h': round(atr_4h, 6),
+                'sweep_direction': sweep_direction,
+                'rsi_4h': round(rsi_4h, 1),
+                'rsi_15m': round(rsi_15m, 1)
             }
             
         except Exception as e:
-            print(f"❌ LMO analiz hatası {symbol}: {e}")
+            print(f"❌ 4H LMO analiz hatası {symbol}: {e}")
             return None
 
 # ESKI Simulated classes - compatibility için

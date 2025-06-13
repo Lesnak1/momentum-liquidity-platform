@@ -200,6 +200,145 @@
     50% { opacity: 0.6; }
 }
 
+/* FTMO Lot Size Section - 2024 Güncel */
+.ftmo-section {
+    margin: 15px 0;
+    border: 2px solid #007bff;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #e3f2fd, #f8f9fa);
+}
+
+.ftmo-header {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: white;
+    padding: 10px 12px;
+    font-weight: bold;
+    font-size: 13px;
+    border-radius: 6px 6px 0 0;
+    text-align: center;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+.ftmo-info {
+    padding: 12px;
+}
+
+.ftmo-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 12px;
+}
+
+.ftmo-label {
+    color: #495057;
+    font-weight: 500;
+}
+
+.ftmo-value {
+    font-weight: bold;
+}
+
+.ftmo-value.lot-size {
+    color: #007bff;
+    font-size: 14px;
+    text-shadow: 0 1px 2px rgba(0,123,255,0.3);
+}
+
+.ftmo-value.risk-amount {
+    color: #dc3545;
+}
+
+/* FTMO Grade Styling */
+.ftmo-grade.excellent {
+    color: #28a745;
+    font-weight: bold;
+    text-shadow: 0 1px 2px rgba(40,167,69,0.3);
+}
+
+.ftmo-grade.good {
+    color: #ffc107;
+    font-weight: bold;
+}
+
+.ftmo-grade.warning {
+    color: #fd7e14;
+    font-weight: bold;
+}
+
+.ftmo-grade.danger {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+/* FTMO Warnings */
+.ftmo-warnings {
+    margin-top: 8px;
+    padding: 8px;
+    background: #fff3cd;
+    border-left: 4px solid #ffc107;
+    border-radius: 4px;
+}
+
+.warning-item {
+    font-size: 10px;
+    color: #856404;
+    margin-bottom: 2px;
+}
+
+.warning-item:last-child {
+    margin-bottom: 0;
+}
+
+/* FTMO Limits Info */
+.ftmo-limits {
+    margin-top: 10px;
+    padding: 8px;
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border-radius: 4px;
+    border: 1px solid #dee2e6;
+}
+
+.limit-item {
+    font-size: 10px;
+    color: #6c757d;
+    margin-bottom: 3px;
+    display: flex;
+    align-items: center;
+}
+
+.limit-item:last-child {
+    margin-bottom: 0;
+}
+
+.limit-item span {
+    font-weight: 500;
+}
+
+.ftmo-recommendation {
+    margin-top: 10px;
+    padding: 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: bold;
+    text-align: center;
+}
+
+.ftmo-recommendation.compliant {
+    background: linear-gradient(135deg, #d4edda, #c3e6cb);
+    color: #155724;
+    border: 1px solid #c3e6cb;
+    box-shadow: 0 2px 4px rgba(21,87,36,0.1);
+}
+
+.ftmo-recommendation.warning {
+    background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+    color: #856404;
+    border: 1px solid #ffeaa7;
+    box-shadow: 0 2px 4px rgba(133,100,4,0.1);
+}
+
 .no-signal p {
     color: #7f8c8d;
     font-size: 13px;
@@ -319,6 +458,32 @@
     .trade-result {
         font-size: 11px;
     }
+
+    .ftmo-section {
+        margin: 10px 0;
+    }
+    
+    .ftmo-row {
+        font-size: 11px;
+        margin-bottom: 6px;
+    }
+    
+    .ftmo-header {
+        font-size: 12px;
+        padding: 8px 10px;
+    }
+    
+    .ftmo-limits {
+        padding: 6px;
+    }
+    
+    .limit-item {
+        font-size: 9px;
+    }
+    
+    .warning-item {
+        font-size: 9px;
+    }
 }
 
 @media (max-width: 480px) {
@@ -351,6 +516,20 @@
     .searching-badge {
         padding: 8px 16px;
         font-size: 12px;
+    }
+
+    .ftmo-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+    }
+    
+    .ftmo-label {
+        font-size: 10px;
+    }
+    
+    .ftmo-value {
+        font-size: 11px;
     }
 }
 

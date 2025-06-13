@@ -87,27 +87,7 @@ const TradeStatistics = ({
 
             </div>
 
-            {/* Son İşlemler */}
-            {recentTrades.length > 0 && (
-                <div className="recent-trades-section">
-                    <h4 className="section-title">📈 Son İşlemler</h4>
-                    <div className="recent-trades-list">
-                        {recentTrades.slice(0, 5).map((trade, index) => (
-                            <div key={index} className={`trade-item ${trade.result}`}>
-                                <div className="trade-symbol">{trade.symbol}</div>
-                                <div className="trade-type">{trade.signal_type}</div>
-                                <div className="trade-result">
-                                    {trade.result === 'WIN' ? '✅' : '❌'} 
-                                    {trade.pips_earned ? ` ${trade.pips_earned > 0 ? '+' : ''}${trade.pips_earned} pip` : ''}
-                                </div>
-                                <div className="trade-time">
-                                    {new Date(trade.close_time).toLocaleDateString('tr-TR')}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
+
 
             {/* Performance Badge */}
             <div className="performance-badge">

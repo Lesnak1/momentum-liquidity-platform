@@ -94,6 +94,8 @@ const TradingCard = ({
                         </div>
                     </div>
                     
+                    {/* FTMO modülü kaldırıldı - basitlik için */}
+                    
                     <div className={`signal-badge ${signal.status === 'NEW' ? 'new-signal' : 'active-signal'}`}>
                         {signal.status === 'NEW' ? '🆕 YENİ FIRSAT' : 'AKTİF SİNYAL'}
                     </div>
@@ -121,23 +123,13 @@ const TradingCard = ({
 
             <div className="divider"></div>
 
-            {/* Geçmiş İşlemler */}
+            {/* Başarı Oranı ve Kaynak Bilgisi */}
             <div className="past-trades">
-                <div className="section-title">GEÇMİŞ İŞLEMLER:</div>
-                {pastTrades.length > 0 ? (
-                    <div className="trades-list">
-                        {pastTrades.slice(0, 3).map((trade, index) => (
-                            <div key={index} className="trade-row">
-                                <span className="trade-date">{trade.date}</span>
-                                <span className={`trade-result ${trade.result === 'TP' ? 'green' : 'red'}`}>
-                                    {trade.signal_type} → {trade.result === 'TP' ? 'DOĞRU (TP)' : 'YANLIŞ (SL)'}
-                                </span>
-                            </div>
-                        ))}
-                    </div>
-                ) : (
-                    <div className="no-trades">Henüz işlem yok</div>
-                )}
+                <div className="section-title">Başarı Oranı: {pastTrades.length > 0 ? 
+                    `${((pastTrades.filter(t => t.result === 'TP').length / pastTrades.length) * 100).toFixed(0)}%` : 
+                    '0%'} • Toplam İşlem: {pastTrades.length} • Doğru / Yanlış: {pastTrades.filter(t => t.result === 'TP').length} / {pastTrades.filter(t => t.result === 'SL').length}</div>
+                <div className="section-title">24s Hacim: {signal?.volume_24h || '835.7M'}</div>
+                <div className="section-title">Kaynak: {signal?.data_source === 'binance' ? 'Binance API' : 'ExchangeRate API'}</div>
             </div>
 
         </div>

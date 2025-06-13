@@ -1,10 +1,12 @@
 """
 Binance REST API ile Gerçek Zamanlı Kripto Verileri
-WebSocket olmadan - sadece HTTP istekleri ile
+GERÇEK API ANAHTARLARI İLE - OPTIMIZE EDİLMİŞ PERFORMANS
 """
 
 import json
 import time
+import hmac
+import hashlib
 from datetime import datetime
 from typing import Dict, List, Optional
 
@@ -15,23 +17,48 @@ try:
 except ImportError:
     URLLIB_AVAILABLE = False
 
+# Config'den API anahtarlarını al
+try:
+    from config import BinanceConfig
+    CONFIG_AVAILABLE = True
+except ImportError:
+    CONFIG_AVAILABLE = False
+
 class BinanceDataProvider:
-    """Binance REST API veri sağlayıcısı"""
+    """GERÇEK API ANAHTARLARI ile Binance REST API veri sağlayıcısı"""
     
     def __init__(self):
-        self.base_url = "https://api.binance.com/api/v3"
-        self.cache = {}
-        self.cache_duration = 10  # 10 saniye cache
+        # API Konfigürasyonu
+        if CONFIG_AVAILABLE:
+            self.config = BinanceConfig.get_api_credentials()
+            self.rate_limits = BinanceConfig.get_rate_limits()
+            self.api_key = self.config['api_key']
+            self.secret_key = self.config['secret_key']
+            self.base_url = "https://api.binance.com/api/v3"
+            print("✅ GERÇEK Binance API anahtarları yüklendi")
+        else:
+            self.base_url = "https://api.binance.com/api/v3"
+            self.api_key = None
+            self.secret_key = None
+            print("⚠️ Config bulunamadı, public API kullanılıyor")
         
-        # En popüler kripto çiftleri
-        self.symbols = [
-            'BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'ADAUSDT', 
-            'DOTUSDT', 'AVAXUSDT', 'LINKUSDT', 'UNIUSDT', 'XRPUSDT',
-            'LTCUSDT', 'TRXUSDT', 'ATOMUSDT', 'FILUSDT', 'HBARUSDT'
-        ]
+        self.cache = {}
+        self.cache_duration = 5  # 5 saniye cache (daha hızlı)
+        self.request_count = 0
+        self.last_minute = int(time.time() / 60)
+        
+        # Öncelikli kripto çiftleri (sizin API'nizle)
+        if CONFIG_AVAILABLE:
+            self.symbols = BinanceConfig.PRIORITY_SYMBOLS
+        else:
+            self.symbols = [
+                'BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'ADAUSDT', 
+                'DOTUSDT', 'AVAXUSDT', 'LINKUSDT', 'UNIUSDT', 'XRPUSDT',
+                'LTCUSDT', 'TRXUSDT', 'ATOMUSDT', 'FILUSDT', 'HBARUSDT'
+            ]
         
     def get_crypto_prices(self) -> Dict:
-        """Kripto fiyatlarını Binance'den çek"""
+        """GERÇEK API ile optimize edilmiş kripto fiyatları"""
         cache_key = 'crypto_prices'
         
         # Cache kontrolü
@@ -41,41 +68,38 @@ class BinanceDataProvider:
         crypto_data = {}
         
         try:
-            if URLLIB_AVAILABLE:
-                # 24hr ticker statistics (tüm semboller için)
-                url = f"{self.base_url}/ticker/24hr"
+            # GERÇEK API ile 24hr ticker
+            data = self._make_request('/ticker/24hr')
+            
+            if data:
+                # Sadece öncelikli sembolleri filtrele
+                for item in data:
+                    symbol = item['symbol']
+                    if symbol in self.symbols:
+                        # USDT'yi /USD'ye dönüştür
+                        display_symbol = symbol.replace('USDT', '/USD')
+                        
+                        crypto_data[display_symbol] = {
+                            'price': float(item['lastPrice']),
+                            'change_24h': float(item['priceChangePercent']),
+                            'volume_24h': float(item['volume']) * float(item['lastPrice']),
+                            'high_24h': float(item['highPrice']),
+                            'low_24h': float(item['lowPrice']),
+                            'timestamp': datetime.now().isoformat(),
+                            'source': 'binance_authenticated' if self.api_key else 'binance_public',
+                            'name': symbol.replace('USDT', ''),
+                            'api_type': 'GERÇEK_API' if self.api_key else 'PUBLIC'
+                        }
                 
-                with urllib.request.urlopen(url, timeout=10) as response:
-                    if response.status == 200:
-                        data = json.loads(response.read().decode())
-                        
-                        # Sadece istediğimiz sembolleri filtrele
-                        for item in data:
-                            symbol = item['symbol']
-                            if symbol in self.symbols:
-                                # USDT'yi /USD'ye dönüştür
-                                display_symbol = symbol.replace('USDT', '/USD')
-                                
-                                crypto_data[display_symbol] = {
-                                    'price': float(item['lastPrice']),
-                                    'change_24h': float(item['priceChangePercent']),
-                                    'volume_24h': float(item['volume']) * float(item['lastPrice']),  # USD cinsinden
-                                    'high_24h': float(item['highPrice']),
-                                    'low_24h': float(item['lowPrice']),
-                                    'timestamp': datetime.now().isoformat(),
-                                    'source': 'binance_rest',
-                                    'name': symbol.replace('USDT', '')
-                                }
-                        
-                        print(f"✅ Binance'den {len(crypto_data)} kripto fiyatı alındı")
-                        
+                api_status = 'GERÇEK_API' if self.api_key else 'PUBLIC_API'
+                print(f"✅ {api_status} ile {len(crypto_data)} kripto fiyatı alındı")
             else:
                 # Fallback
                 crypto_data = self._get_fallback_crypto()
-                print("⚠️ urllib yok, fallback kullanılıyor")
+                print("⚠️ API response boş, fallback kullanılıyor")
                 
         except Exception as e:
-            print(f"❌ Binance API hatası: {e}")
+            print(f"❌ Crypto prices hatası: {e}")
             crypto_data = self._get_fallback_crypto()
         
         # Cache'e kaydet
@@ -87,47 +111,44 @@ class BinanceDataProvider:
         return crypto_data
     
     def get_klines(self, symbol: str, interval: str = '1h', limit: int = 100) -> List[Dict]:
-        """Binance'den geçmiş mum verilerini çek"""
+        """GERÇEK API ile optimize edilmiş mum verileri"""
         cache_key = f'klines_{symbol}_{interval}_{limit}'
         
-        # Cache kontrolü
-        if self._is_cache_valid(cache_key, duration=300):  # 5 dakika cache
+        # Cache kontrolü (klines için 2 dakika cache)
+        if self._is_cache_valid(cache_key, duration=120):
             return self.cache[cache_key]['data']
         
         klines = []
         
         try:
-            if URLLIB_AVAILABLE:
-                # USDT sembolüne dönüştür
-                binance_symbol = symbol.replace('/USD', 'USDT')
+            # USDT sembolüne dönüştür
+            binance_symbol = symbol.replace('/USD', 'USDT')
+            
+            # GERÇEK API ile klines
+            params = {
+                'symbol': binance_symbol,
+                'interval': interval,
+                'limit': limit
+            }
+            
+            data = self._make_request('/klines', params)
+            
+            if data:
+                for kline in data:
+                    klines.append({
+                        'timestamp': int(kline[0]),
+                        'open': float(kline[1]),
+                        'high': float(kline[2]),
+                        'low': float(kline[3]),
+                        'close': float(kline[4]),
+                        'volume': float(kline[5])
+                    })
                 
-                url = f"{self.base_url}/klines"
-                params = {
-                    'symbol': binance_symbol,
-                    'interval': interval,
-                    'limit': str(limit)
-                }
-                
-                query_string = urllib.parse.urlencode(params)
-                full_url = f"{url}?{query_string}"
-                
-                with urllib.request.urlopen(full_url, timeout=15) as response:
-                    if response.status == 200:
-                        data = json.loads(response.read().decode())
-                        
-                        for kline in data:
-                            klines.append({
-                                'timestamp': int(kline[0]),
-                                'open': float(kline[1]),
-                                'high': float(kline[2]),
-                                'low': float(kline[3]),
-                                'close': float(kline[4]),
-                                'volume': float(kline[5])
-                            })
-                        
-                        print(f"✅ {symbol} için {len(klines)} mum verisi alındı")
+                api_status = 'GERÇEK_API' if self.api_key else 'PUBLIC_API'
+                print(f"✅ {symbol} için {len(klines)} mum verisi alındı ({api_status})")
             else:
                 klines = self._generate_fake_klines(symbol, limit)
+                print(f"⚠️ {symbol} API response boş, fallback kullanılıyor")
                 
         except Exception as e:
             print(f"❌ Kline verisi hatası {symbol}: {e}")
@@ -229,6 +250,87 @@ class BinanceDataProvider:
             current_price = close_price
         
         return klines
+    
+    def _create_signature(self, params: str) -> str:
+        """API imzası oluştur (gerçek API için)"""
+        if not self.secret_key:
+            return ""
+        
+        return hmac.new(
+            self.secret_key.encode('utf-8'), 
+            params.encode('utf-8'), 
+            hashlib.sha256
+        ).hexdigest()
+    
+    def _check_rate_limit(self) -> bool:
+        """Rate limit kontrolü (6000 req/min)"""
+        current_minute = int(time.time() / 60)
+        
+        if current_minute != self.last_minute:
+            self.request_count = 0
+            self.last_minute = current_minute
+        
+        if hasattr(self, 'rate_limits'):
+            max_requests = self.rate_limits['max_requests_per_minute']
+        else:
+            max_requests = 1000  # Fallback
+        
+        if self.request_count >= max_requests:
+            print(f"⚠️ Rate limit yaklaşıldı: {self.request_count}/{max_requests}")
+            return False
+        
+        return True
+    
+    def _make_request(self, endpoint: str, params: dict = None, signed: bool = False) -> dict:
+        """Optimize edilmiş API request"""
+        if not self._check_rate_limit():
+            print("❌ Rate limit aşıldı, cached data kullanılıyor")
+            return {}
+        
+        try:
+            if params is None:
+                params = {}
+            
+            # Timestamp ekle (signed requests için)
+            if signed and self.api_key:
+                params['timestamp'] = int(time.time() * 1000)
+            
+            # Query string oluştur
+            query_string = urllib.parse.urlencode(params)
+            
+            # İmza ekle (signed requests için)
+            if signed and self.secret_key:
+                signature = self._create_signature(query_string)
+                query_string += f"&signature={signature}"
+            
+            # Full URL
+            url = f"{self.base_url}{endpoint}"
+            if query_string:
+                url += f"?{query_string}"
+            
+            # Headers
+            headers = {'Content-Type': 'application/json'}
+            if self.api_key:
+                headers['X-MBX-APIKEY'] = self.api_key
+            
+            # Request oluştur
+            req = urllib.request.Request(url, headers=headers)
+            
+            # Request timeout
+            timeout = self.rate_limits.get('request_timeout', 10) if hasattr(self, 'rate_limits') else 10
+            
+            with urllib.request.urlopen(req, timeout=timeout) as response:
+                self.request_count += 1
+                
+                if response.status == 200:
+                    return json.loads(response.read().decode())
+                else:
+                    print(f"❌ Binance API error: {response.status}")
+                    return {}
+                    
+        except Exception as e:
+            print(f"❌ Request error: {e}")
+            return {}
 
 # Global instance
 binance_provider = BinanceDataProvider()

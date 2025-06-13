@@ -46,8 +46,7 @@ function App() {
       clearInterval(cryptoInterval);
       clearInterval(statsInterval);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, []); // Dependency array'i temizle - sadece mount/unmount'ta çalışır
 
   const loadInitialData = async () => {
     try {
@@ -116,6 +115,8 @@ function App() {
       // API durumunu güncelle
       if (pricesData.api_status === 'live') {
         setConnectionStatus('canlı');
+      } else if (pricesData.api_status === 'fallback') {
+        setConnectionStatus('simüle');
       } else {
         setConnectionStatus('hata');
       }
@@ -213,19 +214,31 @@ function App() {
         setRecentTrades(statsData.recent_history);
       }
       
-      // Geçmiş işlemleri trading data'ya ekle (recent_trades kontrolü ile)
-      if (statsData.recent_trades && Array.isArray(statsData.recent_trades)) {
+      // Geçmiş işlemleri trading data'ya ekle - SADECE TP/SL ile sonuçlanan trade'ler
+      if (statsData.recent_history && Array.isArray(statsData.recent_history)) {
+        const completedTrades = statsData.recent_history.filter(trade => 
+          trade.result && (trade.result === 'TP_HIT' || trade.result === 'SL_HIT')
+        );
+        
+        setRecentTrades(completedTrades.map(trade => ({
+          symbol: trade.symbol,
+          signal_type: trade.signal_type || 'BUY',
+          result: trade.result === 'TP_HIT' ? 'WIN' : 'LOSS',
+          pips_earned: parseFloat(trade.pips_earned || 0).toFixed(1),
+          close_time: trade.close_time || trade.entry_time
+        })));
+        
         setTradingData(prev => {
           const newData = { ...prev };
           
-          // Recent trades'leri symbol'e göre grupla
+          // Recent trades'leri symbol'e göre grupla - SADECE TP/SL sonuçlananlar
           const tradesBySymbol = {};
-          statsData.recent_trades.forEach(trade => {
+          completedTrades.forEach(trade => {
             if (!tradesBySymbol[trade.symbol]) {
               tradesBySymbol[trade.symbol] = [];
             }
             tradesBySymbol[trade.symbol].push({
-              date: new Date(trade.entry_time).toLocaleDateString('tr-TR', {
+              date: new Date(trade.close_time || trade.entry_time).toLocaleDateString('tr-TR', {
                 day: '2-digit',
                 month: '2-digit',
                 year: '2-digit',
@@ -233,7 +246,7 @@ function App() {
                 minute: '2-digit'
               }),
               signal_type: trade.signal_type === 'BUY' ? 'AL' : 'SAT',
-              result: trade.result === 'profit' ? 'TP' : 'SL'
+              result: trade.result === 'TP_HIT' ? 'TP' : 'SL'
             });
           });
           
