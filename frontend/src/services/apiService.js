@@ -76,40 +76,13 @@ class ApiService {
     }
 
     /**
-     * Fallback fiyat verileri
+     * ❌ FALLBACK DEVRE DIŞI - GERÇEK VERİ YOKSA HİÇ VERİ YOK
      */
     getFallbackPrices() {
-        const baseTime = new Date().toISOString();
         return {
-            prices: {
-                "XAUUSD": {
-                    price: 2018.45 + (Math.random() - 0.5) * 20,
-                    timestamp: baseTime,
-                    status: "fallback"
-                },
-                "GBPJPY": {
-                    price: 198.450 + (Math.random() - 0.5) * 2,
-                    timestamp: baseTime,
-                    status: "fallback"
-                },
-                "EURCAD": {
-                    price: 1.4825 + (Math.random() - 0.5) * 0.02,
-                    timestamp: baseTime,
-                    status: "fallback"
-                },
-                "EURUSD": {
-                    price: 1.0892 + (Math.random() - 0.5) * 0.02,
-                    timestamp: baseTime,
-                    status: "fallback"
-                },
-                "GBPUSD": {
-                    price: 1.2634 + (Math.random() - 0.5) * 0.02,
-                    timestamp: baseTime,
-                    status: "fallback"
-                }
-            },
-            last_update: baseTime,
-            api_status: "fallback"
+            error: "Real data unavailable, no fallback used",
+            api_status: "no_data",
+            last_update: new Date().toISOString()
         };
     }
 }

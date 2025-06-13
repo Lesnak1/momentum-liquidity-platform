@@ -879,15 +879,12 @@ class TradingSignalHandler(BaseHTTPRequestHandler):
             }
 
     def _get_emergency_fallback_prices(self):
-        """Acil durum fallback fiyatları"""
-        import random
-        base_time = datetime.now().isoformat()
+        """❌ EMERGENCY FALLBACK DEVRE DIŞI - GERÇEK VERİ YOKSA HİÇ VERİ YOK"""
+        # Mock data yerine boş response döndür
         return {
-            "XAUUSD": {"price": 2018.45 + (random.random() - 0.5) * 20, "timestamp": base_time},
-            "GBPJPY": {"price": 198.450 + (random.random() - 0.5) * 2, "timestamp": base_time},
-            "EURCAD": {"price": 1.4825 + (random.random() - 0.5) * 0.02, "timestamp": base_time},
-            "EURUSD": {"price": 1.0892 + (random.random() - 0.5) * 0.02, "timestamp": base_time},
-            "GBPUSD": {"price": 1.2634 + (random.random() - 0.5) * 0.02, "timestamp": base_time}
+            'error': 'No real market data available',
+            'source': 'no_emergency_fallback',
+            'timestamp': datetime.now().isoformat()
         }
 
     def log_message(self, format, *args):
@@ -946,59 +943,8 @@ class TradingSignalHandler(BaseHTTPRequestHandler):
             crypto_signals = []  # Boş array - test signals yok
             
         # Eski fallback test signals:
-        if False:  # DEVRE DIŞI
-            crypto_signals = [
-                {
-                    "id": "CRYPTO_BTC_USD_DIRECT",
-                    "symbol": "BTC/USD", 
-                    "strategy": "Crypto LMO (Strong)",
-                    "signal_type": "BUY",
-                    "current_price": 105200.0,
-                    "ideal_entry": 105200.0,
-                    "take_profit": 110000.0,
-                    "stop_loss": 104800.0,
-                    "reliability_score": 7,
-                    "asset_type": "crypto",
-                    "data_source": "binance",
-                    "creation_time": datetime.now().isoformat(),
-                    "status": "ACTIVE",
-                    "fixed_entry": 105200.0,
-                    "fixed_tp": 110000.0,
-                    "fixed_sl": 104800.0,
-                    "fixed_strategy": "Crypto LMO (Strong)",
-                    "fixed_signal_type": "BUY",
-                    "fixed_reliability": 7,
-                    "ftmo_lot_size": 2.0,
-                    "ftmo_risk_amount": 100.0,
-                    "ftmo_risk_percentage": 1.0,
-                    "ftmo_recommendation": "✅ Düşük Risk - İdeal"
-                },
-                {
-                    "id": "CRYPTO_ETH_USD_DIRECT",
-                    "symbol": "ETH/USD",
-                    "strategy": "Crypto KRO (Breakout)",
-                    "signal_type": "BUY", 
-                    "current_price": 2540.0,
-                    "ideal_entry": 2540.0,
-                    "take_profit": 2650.0,
-                    "stop_loss": 2510.0,
-                    "reliability_score": 6,
-                    "asset_type": "crypto",
-                    "data_source": "binance",
-                    "creation_time": datetime.now().isoformat(),
-                    "status": "ACTIVE",
-                    "fixed_entry": 2540.0,
-                    "fixed_tp": 2650.0, 
-                    "fixed_sl": 2510.0,
-                    "fixed_strategy": "Crypto KRO (Breakout)",
-                    "fixed_signal_type": "BUY",
-                    "fixed_reliability": 6,
-                    "ftmo_lot_size": 2.0,
-                    "ftmo_risk_amount": 100.0,
-                    "ftmo_risk_percentage": 1.0,
-                    "ftmo_recommendation": "✅ Düşük Risk - İdeal"
-                }
-            ]
+                # ❌ MOCK DATA TAMAMEN KALDIRILDI - SADECE GERÇEK VERİ
+        crypto_signals = []  # Boş array - hiç mock data yok
         
         return {
             'signals': crypto_signals,

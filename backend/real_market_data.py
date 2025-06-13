@@ -256,44 +256,9 @@ class RealMarketDataProvider:
         """Gerçekçi mum verileri üret (forex için)"""
         import random
         
-        # Base fiyatları
-        base_prices = {
-            'EURUSD': 1.0520,
-            'GBPUSD': 1.2680,
-            'GBPJPY': 198.50,
-            'EURCAD': 1.4850,
-            'XAUUSD': 2650.0
-        }
-        
-        base_price = base_prices.get(symbol, 1.0)
-        candles = []
-        current_price = base_price
-        
-        # Son N saatlik veri üret
-        for i in range(limit):
-            timestamp = int((datetime.now() - timedelta(hours=limit-i)).timestamp() * 1000)
-            
-            # Volatilite ekle
-            volatility = 0.002 if 'USD' in symbol else 0.001
-            change = random.gauss(0, volatility)
-            
-            open_price = current_price
-            close_price = current_price * (1 + change)
-            high_price = max(open_price, close_price) * (1 + abs(random.gauss(0, volatility/2)))
-            low_price = min(open_price, close_price) * (1 - abs(random.gauss(0, volatility/2)))
-            
-            candles.append({
-                'timestamp': timestamp,
-                'open': round(open_price, 5),
-                'high': round(high_price, 5),
-                'low': round(low_price, 5),
-                'close': round(close_price, 5),
-                'volume': random.randint(1000, 50000)
-            })
-            
-            current_price = close_price
-        
-        return candles
+        # ❌ MOCK BASE PRICES KALDIRILDI - Sadece gerçek API verisi kullan
+        # Gerçek exchange rate yoksa candle üretme
+        return []
     
     def _is_cache_valid(self, cache_key: str, duration: int = None) -> bool:
         """Cache geçerliliğini kontrol et"""
@@ -304,60 +269,22 @@ class RealMarketDataProvider:
         return (time.time() - self.cache[cache_key]['timestamp']) < cache_duration
     
     def _get_fallback_forex(self) -> Dict:
-        """Forex fallback fiyatları"""
-        import random
-        
-        base_prices = {
-            'EURUSD': 1.0520,
-            'GBPUSD': 1.2680,
-            'GBPJPY': 198.50,
-            'EURCAD': 1.4850,
-            'XAUUSD': 2650.0
+        """❌ FALLBACK DEVRE DIŞI - GERÇEK VERİ YOKSA HİÇ VERİ YOK"""
+        # Mock data yerine boş response döndür
+        return {
+            'error': 'No real forex data available',
+            'source': 'no_fallback',
+            'timestamp': datetime.now().isoformat()
         }
-        
-        result = {}
-        for symbol, base_price in base_prices.items():
-            variation = random.uniform(-0.005, 0.005)  # ±0.5%
-            result[symbol] = {
-                'price': round(base_price * (1 + variation), 5),
-                'timestamp': datetime.now().isoformat(),
-                'source': 'fallback'
-            }
-        
-        return result
     
     def _get_fallback_crypto(self) -> Dict:
-        """Kripto fallback fiyatları"""
-        import random
-        
-        base_prices = {
-            'BTC/USD': 43250.0,
-            'ETH/USD': 2840.0,
-            'BNB/USD': 245.0,
-            'SOL/USD': 89.0,
-            'ADA/USD': 0.485,
-            'DOT/USD': 7.25,
-            'AVAX/USD': 38.50,
-            'LINK/USD': 14.80,
-
-            'UNI/USD': 6.50
+        """❌ FALLBACK DEVRE DIŞI - GERÇEK VERİ YOKSA HİÇ VERİ YOK"""
+        # Mock data yerine boş response döndür
+        return {
+            'error': 'No real crypto data available',
+            'source': 'no_fallback',
+            'timestamp': datetime.now().isoformat()
         }
-        
-        result = {}
-        for symbol, base_price in base_prices.items():
-            variation = random.uniform(-0.02, 0.02)  # ±2%
-            change_24h = random.uniform(-5, 5)
-            
-            result[symbol] = {
-                'price': round(base_price * (1 + variation), 4),
-                'change_24h': round(change_24h, 2),
-                'volume_24h': random.randint(100000000, 10000000000),
-                'market_cap': random.randint(1000000000, 100000000000),
-                'timestamp': datetime.now().isoformat(),
-                'source': 'fallback'
-            }
-        
-        return result
 
 # Global instance
 market_data_provider = RealMarketDataProvider()
